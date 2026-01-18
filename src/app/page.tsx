@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { FileUploadZone } from "@/components/file-upload-zone";
 import { ResultsTable } from "@/components/results-table";
+import { PrimoPeriodoControlliDashboard } from "@/components/primo-periodo-controlli-dashboard";
 import { parseSpreadsheetFile, exportToExcel } from "@/lib/file-parser";
 import { processVotiFiles } from "@/lib/voti-processor";
 import { processPrimoPeriodoFile } from "@/lib/primo-periodo-processor";
+import { calculatePrimoPeriodoStats } from "@/lib/primo-periodo-stats";
 import type { OutputRow, PrimoPeriodoOutputRow, ProcessType } from "@/lib/voti-utils";
 import { toast } from "sonner";
 import {
@@ -23,7 +25,12 @@ import {
   Users,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  ShieldCheck,
+  FileText
 } from "lucide-react";
 
 type AppState = "upload" | "results";
@@ -211,6 +218,20 @@ export default function HomePage() {
     toast.success("File Excel esportato");
   };
 
+  const downloadReport = useCallback(() => {
+    if (reportLines.length === 0) return;
+    const text = reportLines.join('\n');
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().slice(2, 16).replace(/[-:T]/g, '').replace(/(\d{6})(\d{4})/, '$1-$2');
+    link.href = url;
+    link.download = `Report_${timestamp}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Report scaricato');
+  }, [reportLines]);
+
   const canProcessVotiFinali = diffData.length > 0 && allData.length > 0 && !isProcessing;
   const canProcessPrimoPeriodo = primoPeriodoData.length > 0 && !isProcessing;
   const canProcess = processType === "voti-finali" ? canProcessVotiFinali : canProcessPrimoPeriodo;
@@ -305,14 +326,111 @@ export default function HomePage() {
     { key: "OreAssenza", label: "Assenze" },
   ];
 
-  // Results page
-  if (appState === "results") {
-    const isVotiFinali = processType === "voti-finali";
-    const data = isVotiFinali ? outputData : primoPeriodoOutputData;
-    const columns = isVotiFinali ? votiFinaliColumns : primoPeriodoColumns;
-    const handleExport = isVotiFinali ? handleExportVotiFinali : handleExportPrimoPeriodo;
+  // Results page for Primo Periodo with Dashboard
+  if (appState === "results" && processType === "primo-periodo") {
+    const stats = calculatePrimoPeriodoStats(primoPeriodoOutputData);
+    const dataOra = reportLines.find(l => l.startsWith('Data/ora:'))?.replace('Data/ora:', '').trim() || '';
 
-    // Calculate stats for voti finali
+    return (
+      <main className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto max-w-7xl px-4">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <Button variant="ghost" onClick={handleBack} className="mb-2 -ml-2">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Nuova elaborazione
+              </Button>
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+                Elaborazione Primo Periodo Completata
+              </h1>
+              {dataOra && (
+                <p className="text-muted-foreground flex items-center gap-2 mt-1">
+                  <Calendar className="h-4 w-4" />
+                  {dataOra}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Download Section */}
+          <Card className="mb-8 border-green-200 bg-green-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Scarica i File Elaborati
+              </CardTitle>
+              <CardDescription>
+                Scarica i risultati dell&apos;elaborazione nei formati disponibili
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <Button
+                  onClick={handleExportPrimoPeriodo}
+                  size="lg"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <FileSpreadsheet className="h-5 w-5 mr-2" />
+                  Scarica Excel (.xlsx)
+                </Button>
+                <Button
+                  onClick={downloadReport}
+                  variant="outline"
+                  size="lg"
+                >
+                  <FileText className="h-5 w-5 mr-2" />
+                  Scarica Report
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Privacy Notice */}
+          <Card className="mb-8 border-blue-200 bg-blue-50/50">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-blue-800">Dati Anonimizzati</h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    I codici fiscali sono stati sostituiti con hash univoci non reversibili. 
+                    Le materie non didattiche (religione, comportamento, ecc.) sono state rimosse.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator className="my-8" />
+
+          {/* Dashboard Controlli */}
+          <div className="mb-8">
+            <PrimoPeriodoControlliDashboard stats={stats} reportLines={reportLines} />
+          </div>
+
+          <Separator className="my-8" />
+
+          {/* Data Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Dati Elaborati</CardTitle>
+              <CardDescription>
+                {primoPeriodoOutputData.length} righe elaborate
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResultsTable data={primoPeriodoOutputData} columns={primoPeriodoColumns} pageSize={25} />
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    );
+  }
+
+  // Results page for Voti Finali
+  if (appState === "results" && processType === "voti-finali") {
     const esitiRows = outputData.filter(r => r.Materia === "ESITO");
     const ammessi = esitiRows.filter(r => r.EsitoFinale.toLowerCase() === "ammesso").length;
     const nonAmmessi = esitiRows.filter(r => r.EsitoFinale.toLowerCase().includes("non ammesso")).length;
@@ -323,11 +441,9 @@ export default function HomePage() {
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">
-                {isVotiFinali ? "Risultati Voti Finali" : "Risultati Primo Periodo"}
-              </h1>
+              <h1 className="text-2xl font-bold">Risultati Voti Finali</h1>
               <p className="text-muted-foreground">
-                {data.length} righe elaborate
+                {outputData.length} righe elaborate
               </p>
             </div>
             <div className="flex gap-2">
@@ -335,7 +451,7 @@ export default function HomePage() {
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Nuova Elaborazione
               </Button>
-              <Button onClick={handleExport}>
+              <Button onClick={handleExportVotiFinali}>
                 <Download className="mr-2 h-4 w-4" />
                 Esporta Excel
               </Button>
@@ -343,7 +459,7 @@ export default function HomePage() {
           </div>
 
           {/* Stats cards for Voti Finali */}
-          {isVotiFinali && esitiRows.length > 0 && (
+          {esitiRows.length > 0 && (
             <div className="grid gap-4 md:grid-cols-4 mb-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -390,7 +506,7 @@ export default function HomePage() {
               <CardTitle>Dati Elaborati</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResultsTable data={data} columns={columns} pageSize={25} />
+              <ResultsTable data={outputData} columns={votiFinaliColumns} pageSize={25} />
             </CardContent>
           </Card>
 
