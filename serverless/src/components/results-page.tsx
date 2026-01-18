@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { StatisticsCards } from './statistics-cards';
 import { EsitiChart } from './esiti-chart';
-import { ControlliList } from './controlli-list';
+import { ControlliDashboard } from './controlli-dashboard';
 import { ResultsTable } from './results-table';
 import { parseReportLines, type ReportData } from '@/lib/report-parser';
 import { exportToExcel } from '@/lib/file-parser';
@@ -160,7 +160,7 @@ export function ResultsPage({ outputData, reportLines, onBack }: ResultsPageProp
 
       {/* Controlli */}
       <div className="mb-8">
-        <ControlliList controlli={reportData.controlli} />
+        <ControlliDashboard controlli={reportData.controlli} />
       </div>
 
       <Separator className="my-8" />

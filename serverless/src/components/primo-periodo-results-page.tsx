@@ -11,6 +11,7 @@ import { PrimoPeriodoResultsTable } from './primo-periodo-results-table';
 import { PrimoPeriodoStatsCards } from './primo-periodo-stats-cards';
 import { PrimoPeriodoCharts } from './primo-periodo-charts';
 import { PrimoPeriodoMaterieTable } from './primo-periodo-materie-table';
+import { PrimoPeriodoControlliDashboard } from './primo-periodo-controlli-dashboard';
 import { ReportViewer } from './report-viewer';
 import { exportToExcel } from '@/lib/file-parser';
 import { calculatePrimoPeriodoStats } from '@/lib/primo-periodo-stats';
@@ -163,6 +164,13 @@ export function PrimoPeriodoResultsPage({ outputData, reportLines, onBack }: Pri
           </div>
         </CardContent>
       </Card>
+
+      <Separator className="my-8" />
+
+      {/* Dashboard Controlli */}
+      <div className="mb-8">
+        <PrimoPeriodoControlliDashboard stats={stats} reportLines={reportLines} />
+      </div>
 
       <Separator className="my-8" />
 
