@@ -143,12 +143,6 @@ export function PrimoPeriodoResultsPage({ outputData, reportLines, onBack }: Pri
         </CardContent>
       </Card>
 
-      {/* Statistics Cards */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Riepilogo</h2>
-        <PrimoPeriodoStatsCards stats={stats} />
-      </div>
-
       {/* Privacy Notice */}
       <Card className="mb-8 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
         <CardContent className="pt-6">
@@ -167,7 +161,7 @@ export function PrimoPeriodoResultsPage({ outputData, reportLines, onBack }: Pri
 
       <Separator className="my-8" />
 
-      {/* Dashboard Controlli */}
+      {/* Dashboard Controlli - NUOVA SEZIONE */}
       <div className="mb-8">
         <PrimoPeriodoControlliDashboard stats={stats} reportLines={reportLines} />
       </div>
@@ -176,7 +170,7 @@ export function PrimoPeriodoResultsPage({ outputData, reportLines, onBack }: Pri
 
       {/* Charts */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Analisi Insufficienze</h2>
+        <h2 className="text-xl font-semibold mb-4">Analisi Insufficienze Dettagliata</h2>
         <PrimoPeriodoCharts stats={stats} />
       </div>
 
