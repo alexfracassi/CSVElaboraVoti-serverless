@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elaborazione Voti</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --warning: #ca8a04;
+      --error: #dc2626;
+      --error-light: #fef2f2;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --blue-50: #eff6ff;
+      --blue-100: #dbeafe;
+      --green-50: #f0fdf4;
+      --green-600: #16a34a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--gray-50);
+      color: var(--gray-800);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      color: var(--gray-500);
+    }
+
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 0.75rem;
+      border: 1px solid var(--gray-200);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .card-header h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--gray-800);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-header p {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+      margin-top: 0.25rem;
+    }
+
+    .card-content {
+      padding: 1.5rem;
+    }
+
+    /* Info Card */
+    .info-card {
+      background: var(--blue-50);
+      border-color: var(--primary);
+    }
+
+    .info-card .card-header {
+      border-bottom-color: #93c5fd;
+    }
+
+    .info-card .card-header h2 {
+      color: var(--primary);
+    }
+
+    .info-card ol {
+      color: var(--primary-dark);
+      padding-left: 1.25rem;
+    }
+
+    .info-card li {
+      margin-bottom: 0.25rem;
+    }
+
+    /* Success Card */
+    .success-card {
+      background: var(--green-50);
+      border-color: var(--success);
+    }
+
+    .success-card .card-header {
+      border-bottom-color: #86efac;
+    }
+
+    .success-card .card-header h2 {
+      color: var(--success);
+    }
+
+    /* Process Selector */
+    .process-selector {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .process-btn {
+      flex: 1;
+      padding: 1rem;
+      border: 2px solid var(--gray-200);
+      border-radius: 0.5rem;
+      background: white;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .process-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .process-btn.active {
+      border-color: var(--primary);
+      background: var(--blue-50);
+    }
+
+    .process-btn h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .process-btn p {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-700);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      background: white;
+      cursor: pointer;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #15803d;
+    }
+
+    .btn-outline {
+      background: white;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-700);
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      background: var(--gray-50);
+      border-color: var(--gray-400);
+    }
+
+    .btn-lg {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      margin-top: 1rem;
+    }
+
+    .progress-bar {
+      height: 0.5rem;
+      background: var(--gray-200);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.3s;
+    }
+
+    .progress-text {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+      margin-top: 0.5rem;
+    }
+
+    /* Preview Table */
+    .preview-container {
+      margin-top: 1rem;
+      overflow-x: auto;
+    }
+
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+
+    .preview-table th,
+    .preview-table td {
+      padding: 0.5rem;
+      text-align: left;
+      border: 1px solid var(--gray-200);
+    }
+
+    .preview-table th {
+      background: var(--gray-100);
+      font-weight: 600;
+    }
+
+    .preview-info {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      margin-top: 0.5rem;
+    }
+
+    /* Results Section */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .results-header h1 {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 1rem;
+      color: var(--gray-600);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border-radius: 0.375rem;
+    }
+
+    .back-btn:hover {
+      background: var(--gray-100);
+    }
+
+    /* Download Buttons */
+    .download-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* Report */
+    .report-container {
+      background: var(--gray-900);
+      color: #a5f3fc;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .report-container pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* Statistics Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 0.5rem;
+      padding: 1rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-top: 0.25rem;
+    }
+
+    /* Errors */
+    .error-card {
+      background: var(--error-light);
+      border-color: var(--error);
+    }
+
+    .error-card .card-header h2 {
+      color: var(--error);
+    }
+
+    .error-list {
+      list-style: disc;
+      padding-left: 1.25rem;
+      color: var(--error);
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Hidden */
+    .hidden {
+      display: none !important;
+    }
+
+    /* Material Icons alignment */
+    .material-icons {
+      font-size: 1.25rem;
+      vertical-align: middle;
+    }
+
+    .material-icons.small {
+      font-size: 1rem;
+    }
+
+    .material-icons.large {
+      font-size: 2rem;
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      background: var(--gray-800);
+      color: white;
+      font-size: 0.875rem;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success {
+      background: var(--success);
+    }
+
+    .toast.error {
+      background: var(--error);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- UPLOAD VIEW -->
+    <div id="uploadView">
+      <div class="header">
+        <h1>Elaborazione Voti</h1>
+        <p>Seleziona il tipo di elaborazione e i fogli da processare</p>
+      </div>
+
+      <!-- Process Type Selector -->
+      <div class="process-selector">
+        <button class="process-btn active" data-type="voti-finali" onclick="selectProcessType('voti-finali')">
+          <h3>Voti Finali</h3>
+          <p>Unione scrutini differiti con dati completi</p>
+        </button>
+        <button class="process-btn" data-type="primo-periodo" onclick="selectProcessType('primo-periodo')">
+          <h3>Primo Periodo</h3>
+          <p>Anonimizzazione voti primo quadrimestre</p>
+        </button>
+      </div>
+
+      <!-- Info Card -->
+      <div class="card info-card">
+        <div class="card-header">
+          <h2><span class="material-icons">info</span> <span id="infoTitle">Elaborazione Voti Finali</span></h2>
+        </div>
+        <div class="card-content">
+          <ol id="infoSteps">
+            <li>Seleziona il foglio degli <strong>scrutini differiti</strong> (studenti con sospensione a giugno)</li>
+            <li>Seleziona il foglio <strong>completo</strong> con tutti gli studenti e le materie</li>
+            <li>Clicca su <strong>Elabora</strong> per unire i dati</li>
+            <li>Visualizza i risultati e scarica i file elaborati</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- File Selection - Voti Finali -->
+      <div id="votiFinaliFields">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h2><span class="material-icons">description</span> File Scrutini Differiti</h2>
+              <p>Foglio con i voti degli studenti con sospensione a giugno</p>
+            </div>
+            <div class="card-content">
+              <div class="form-group">
+                <label class="form-label">Seleziona Spreadsheet</label>
+                <select id="diffSpreadsheet" class="form-select" onchange="loadSheetNames('diff')">
+                  <option value="">-- Seleziona un file --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Seleziona Foglio</label>
+                <select id="diffSheet" class="form-select" onchange="previewSheet('diff')">
+                  <option value="">-- Prima seleziona uno spreadsheet --</option>
+                </select>
+              </div>
+              <div id="diffPreview" class="preview-container hidden"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2><span class="material-icons">description</span> File Completo Studenti</h2>
+              <p>Foglio con tutti gli studenti e tutte le materie</p>
+            </div>
+            <div class="card-content">
+              <div class="form-group">
+                <label class="form-label">Seleziona Spreadsheet</label>
+                <select id="allSpreadsheet" class="form-select" onchange="loadSheetNames('all')">
+                  <option value="">-- Seleziona un file --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Seleziona Foglio</label>
+                <select id="allSheet" class="form-select" onchange="previewSheet('all')">
+                  <option value="">-- Prima seleziona uno spreadsheet --</option>
+                </select>
+              </div>
+              <div id="allPreview" class="preview-container hidden"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Selection - Primo Periodo -->
+      <div id="primoPeriodoFields" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h2><span class="material-icons">description</span> File Voti Primo Periodo</h2>
+            <p>Foglio con i voti del primo quadrimestre</p>
+          </div>
+          <div class="card-content">
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Seleziona Spreadsheet</label>
+                <select id="ppSpreadsheet" class="form-select" onchange="loadSheetNames('pp')">
+                  <option value="">-- Seleziona un file --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Seleziona Foglio</label>
+                <select id="ppSheet" class="form-select" onchange="previewSheet('pp')">
+                  <option value="">-- Prima seleziona uno spreadsheet --</option>
+                </select>
+              </div>
+            </div>
+            <div id="ppPreview" class="preview-container hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Process Button -->
+      <div class="card">
+        <div class="card-content">
+          <button id="processBtn" class="btn btn-primary btn-lg" onclick="processFiles()" disabled>
+            <span class="material-icons">play_arrow</span>
+            Elabora File
+          </button>
+          <span id="processHint" class="progress-text" style="margin-left: 1rem;">Seleziona i file per procedere</span>
+
+          <div id="progressContainer" class="progress-container hidden">
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+            </div>
+            <p id="progressText" class="progress-text">Elaborazione in corso...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Errors -->
+      <div id="errorCard" class="card error-card hidden">
+        <div class="card-header">
+          <h2><span class="material-icons">error</span> Errori</h2>
+        </div>
+        <div class="card-content">
+          <ul id="errorList" class="error-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS VIEW -->
+    <div id="resultsView" class="hidden">
+      <div class="results-header">
+        <div>
+          <a class="back-btn" onclick="resetView()">
+            <span class="material-icons small">arrow_back</span>
+            Nuova elaborazione
+          </a>
+          <h1>
+            <span class="material-icons large" style="color: var(--success)">check_circle</span>
+            Elaborazione Completata
+          </h1>
+          <p id="resultDateTime" style="color: var(--gray-500); margin-top: 0.25rem;"></p>
+        </div>
+      </div>
+
+      <!-- Download Section -->
+      <div class="card success-card">
+        <div class="card-header">
+          <h2><span class="material-icons">download</span> Scarica i File Elaborati</h2>
+          <p>Scarica i risultati dell'elaborazione nei formati disponibili</p>
+        </div>
+        <div class="card-content">
+          <div class="download-buttons">
+            <a id="downloadSheetBtn" class="btn btn-success btn-lg" target="_blank">
+              <span class="material-icons">open_in_new</span>
+              Apri Google Sheets
+            </a>
+            <button id="downloadCsvBtn" class="btn btn-outline btn-lg" onclick="downloadCSV()">
+              <span class="material-icons">description</span>
+              Scarica CSV
+            </button>
+            <button id="downloadReportBtn" class="btn btn-outline btn-lg" onclick="downloadReport()">
+              <span class="material-icons">article</span>
+              Scarica Report
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      <div id="statsSection">
+        <h2 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600;">Riepilogo</h2>
+        <div id="statsGrid" class="stats-grid"></div>
+      </div>
+
+      <!-- Report -->
+      <div class="card">
+        <div class="card-header">
+          <h2><span class="material-icons">summarize</span> Report Controlli</h2>
+        </div>
+        <div class="card-content">
+          <div class="report-container">
+            <pre id="reportContent"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toastContainer"></div>
+
+  <script>
+    // State
+    var state = {
+      processType: 'voti-finali',
+      spreadsheets: [],
+      resultData: null,
+      reportLines: [],
+      csv: ''
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSpreadsheets();
+    });
+
+    // Load available spreadsheets
+    function loadSpreadsheets() {
+      showToast('Caricamento file...', 'info');
+
+      google.script.run
+        .withSuccessHandler(function(files) {
+          state.spreadsheets = files || [];
+          populateSpreadsheetSelects();
+          showToast('File caricati: ' + state.spreadsheets.length, 'success');
+        })
+        .withFailureHandler(function(error) {
+          showToast('Errore nel caricamento: ' + error, 'error');
+        })
+        .apiGetSpreadsheets();
+    }
+
+    // Populate spreadsheet selects
+    function populateSpreadsheetSelects() {
+      var selects = ['diffSpreadsheet', 'allSpreadsheet', 'ppSpreadsheet'];
+
+      selects.forEach(function(id) {
+        var select = document.getElementById(id);
+        select.innerHTML = '<option value="">-- Seleziona un file --</option>';
+
+        state.spreadsheets.forEach(function(file) {
+          var option = document.createElement('option');
+          option.value = file.id;
+          option.textContent = file.name;
+          select.appendChild(option);
+        });
+      });
+    }
+
+    // Load sheet names for a spreadsheet
+    function loadSheetNames(type) {
+      var spreadsheetId;
+      var sheetSelect;
+
+      switch(type) {
+        case 'diff':
+          spreadsheetId = document.getElementById('diffSpreadsheet').value;
+          sheetSelect = document.getElementById('diffSheet');
+          break;
+        case 'all':
+          spreadsheetId = document.getElementById('allSpreadsheet').value;
+          sheetSelect = document.getElementById('allSheet');
+          break;
+        case 'pp':
+          spreadsheetId = document.getElementById('ppSpreadsheet').value;
+          sheetSelect = document.getElementById('ppSheet');
+          break;
+      }
+
+      if (!spreadsheetId) {
+        sheetSelect.innerHTML = '<option value="">-- Prima seleziona uno spreadsheet --</option>';
+        updateProcessButton();
+        return;
+      }
+
+      sheetSelect.innerHTML = '<option value="">Caricamento...</option>';
+
+      google.script.run
+        .withSuccessHandler(function(names) {
+          sheetSelect.innerHTML = '';
+          names.forEach(function(name, index) {
+            var option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            if (index === 0) option.selected = true;
+            sheetSelect.appendChild(option);
+          });
+          previewSheet(type);
+          updateProcessButton();
+        })
+        .withFailureHandler(function(error) {
+          sheetSelect.innerHTML = '<option value="">Errore</option>';
+          showToast('Errore: ' + error, 'error');
+        })
+        .apiGetSheetNames(spreadsheetId);
+    }
+
+    // Preview sheet data
+    function previewSheet(type) {
+      var spreadsheetId, sheetName, previewDiv;
+
+      switch(type) {
+        case 'diff':
+          spreadsheetId = document.getElementById('diffSpreadsheet').value;
+          sheetName = document.getElementById('diffSheet').value;
+          previewDiv = document.getElementById('diffPreview');
+          break;
+        case 'all':
+          spreadsheetId = document.getElementById('allSpreadsheet').value;
+          sheetName = document.getElementById('allSheet').value;
+          previewDiv = document.getElementById('allPreview');
+          break;
+        case 'pp':
+          spreadsheetId = document.getElementById('ppSpreadsheet').value;
+          sheetName = document.getElementById('ppSheet').value;
+          previewDiv = document.getElementById('ppPreview');
+          break;
+      }
+
+      if (!spreadsheetId || !sheetName) {
+        previewDiv.classList.add('hidden');
+        return;
+      }
+
+      previewDiv.innerHTML = '<p style="color: var(--gray-500); font-size: 0.875rem;">Caricamento anteprima...</p>';
+      previewDiv.classList.remove('hidden');
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (!result.success) {
+            previewDiv.innerHTML = '<p style="color: var(--error); font-size: 0.875rem;">Errore: ' + result.error + '</p>';
+            return;
+          }
+
+          var html = '<table class="preview-table"><thead><tr>';
+          result.headers.forEach(function(h) {
+            html += '<th>' + escapeHtml(h) + '</th>';
+          });
+          html += '</tr></thead><tbody>';
+
+          result.preview.forEach(function(row) {
+            html += '<tr>';
+            result.headers.forEach(function(h) {
+              html += '<td>' + escapeHtml(row[h] || '') + '</td>';
+            });
+            html += '</tr>';
+          });
+
+          html += '</tbody></table>';
+          html += '<p class="preview-info">Mostrando prime ' + result.preview.length + ' righe di ' + result.totalRows + ' totali</p>';
+
+          previewDiv.innerHTML = html;
+        })
+        .withFailureHandler(function(error) {
+          previewDiv.innerHTML = '<p style="color: var(--error); font-size: 0.875rem;">Errore: ' + error + '</p>';
+        })
+        .apiPreviewSheet(spreadsheetId, sheetName);
+    }
+
+    // Select process type
+    function selectProcessType(type) {
+      state.processType = type;
+
+      // Update buttons
+      document.querySelectorAll('.process-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+        if (btn.dataset.type === type) {
+          btn.classList.add('active');
+        }
+      });
+
+      // Update info card
+      var infoTitle = document.getElementById('infoTitle');
+      var infoSteps = document.getElementById('infoSteps');
+
+      if (type === 'voti-finali') {
+        infoTitle.textContent = 'Elaborazione Voti Finali';
+        infoSteps.innerHTML =
+          '<li>Seleziona il foglio degli <strong>scrutini differiti</strong> (studenti con sospensione a giugno)</li>' +
+          '<li>Seleziona il foglio <strong>completo</strong> con tutti gli studenti e le materie</li>' +
+          '<li>Clicca su <strong>Elabora</strong> per unire i dati</li>' +
+          '<li>Visualizza i risultati e scarica i file elaborati</li>';
+
+        document.getElementById('votiFinaliFields').classList.remove('hidden');
+        document.getElementById('primoPeriodoFields').classList.add('hidden');
+      } else {
+        infoTitle.textContent = 'Elaborazione Primo Periodo';
+        infoSteps.innerHTML =
+          '<li>Seleziona il foglio dei <strong>voti del primo periodo</strong></li>' +
+          '<li>I codici fiscali verranno <strong>anonimizzati</strong> con hash</li>' +
+          '<li>Le materie non didattiche verranno <strong>rimosse</strong></li>' +
+          '<li>Scarica il file elaborato pronto per l\'analisi</li>';
+
+        document.getElementById('votiFinaliFields').classList.add('hidden');
+        document.getElementById('primoPeriodoFields').classList.remove('hidden');
+      }
+
+      updateProcessButton();
+    }
+
+    // Update process button state
+    function updateProcessButton() {
+      var btn = document.getElementById('processBtn');
+      var hint = document.getElementById('processHint');
+      var canProcess = false;
+
+      if (state.processType === 'voti-finali') {
+        var diffId = document.getElementById('diffSpreadsheet').value;
+        var diffSheet = document.getElementById('diffSheet').value;
+        var allId = document.getElementById('allSpreadsheet').value;
+        var allSheet = document.getElementById('allSheet').value;
+
+        canProcess = diffId && diffSheet && allId && allSheet;
+        hint.textContent = canProcess ? '' : 'Seleziona entrambi i file per procedere';
+      } else {
+        var ppId = document.getElementById('ppSpreadsheet').value;
+        var ppSheet = document.getElementById('ppSheet').value;
+
+        canProcess = ppId && ppSheet;
+        hint.textContent = canProcess ? '' : 'Seleziona il file per procedere';
+      }
+
+      btn.disabled = !canProcess;
+    }
+
+    // Process files
+    function processFiles() {
+      var btn = document.getElementById('processBtn');
+      var progressContainer = document.getElementById('progressContainer');
+      var progressFill = document.getElementById('progressFill');
+      var progressText = document.getElementById('progressText');
+      var errorCard = document.getElementById('errorCard');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Elaborazione in corso...';
+      progressContainer.classList.remove('hidden');
+      errorCard.classList.add('hidden');
+
+      progressFill.style.width = '10%';
+      progressText.textContent = 'Avvio elaborazione...';
+
+      var callback = {
+        success: function(result) {
+          progressFill.style.width = '100%';
+
+          if (!result.success) {
+            progressText.textContent = 'Errore durante l\'elaborazione';
+            showErrors(result.errors);
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons">play_arrow</span> Elabora File';
+            return;
+          }
+
+          state.resultData = result;
+          state.reportLines = result.reportLines;
+          state.csv = result.csv;
+
+          progressText.textContent = 'Completato!';
+          showToast('Elaborazione completata: ' + result.rowCount + ' righe generate', 'success');
+
+          setTimeout(function() {
+            showResults();
+          }, 500);
+        },
+        failure: function(error) {
+          progressText.textContent = 'Errore';
+          showErrors([error.toString()]);
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-icons">play_arrow</span> Elabora File';
+          showToast('Errore durante l\'elaborazione', 'error');
+        }
+      };
+
+      if (state.processType === 'voti-finali') {
+        var diffId = document.getElementById('diffSpreadsheet').value;
+        var diffSheet = document.getElementById('diffSheet').value;
+        var allId = document.getElementById('allSpreadsheet').value;
+        var allSheet = document.getElementById('allSheet').value;
+
+        progressFill.style.width = '30%';
+        progressText.textContent = 'Lettura file...';
+
+        google.script.run
+          .withSuccessHandler(callback.success)
+          .withFailureHandler(callback.failure)
+          .apiProcessVotiFinali(diffId, diffSheet, allId, allSheet);
+      } else {
+        var ppId = document.getElementById('ppSpreadsheet').value;
+        var ppSheet = document.getElementById('ppSheet').value;
+
+        progressFill.style.width = '30%';
+        progressText.textContent = 'Lettura file...';
+
+        google.script.run
+          .withSuccessHandler(callback.success)
+          .withFailureHandler(callback.failure)
+          .apiProcessPrimoPeriodo(ppId, ppSheet);
+      }
+    }
+
+    // Show errors
+    function showErrors(errors) {
+      var errorCard = document.getElementById('errorCard');
+      var errorList = document.getElementById('errorList');
+
+      errorList.innerHTML = '';
+      errors.forEach(function(error) {
+        var li = document.createElement('li');
+        li.textContent = error;
+        errorList.appendChild(li);
+      });
+
+      errorCard.classList.remove('hidden');
+    }
+
+    // Show results view
+    function showResults() {
+      document.getElementById('uploadView').classList.add('hidden');
+      document.getElementById('resultsView').classList.remove('hidden');
+
+      // Set date/time
+      document.getElementById('resultDateTime').textContent = new Date().toLocaleString('it-IT');
+
+      // Set download link
+      document.getElementById('downloadSheetBtn').href = state.resultData.outputUrl;
+
+      // Parse and show stats
+      showStats();
+
+      // Show report
+      document.getElementById('reportContent').textContent = state.reportLines.join('\n');
+    }
+
+    // Show statistics
+    function showStats() {
+      var statsGrid = document.getElementById('statsGrid');
+      var stats = parseStats(state.reportLines);
+
+      statsGrid.innerHTML = '';
+
+      if (stats.righeOutput) {
+        addStatCard(statsGrid, 'Righe Output', stats.righeOutput);
+      }
+      if (stats.studenti) {
+        addStatCard(statsGrid, 'Studenti', stats.studenti);
+      }
+      if (stats.classi) {
+        addStatCard(statsGrid, 'Classi', stats.classi);
+      }
+      if (stats.materie) {
+        addStatCard(statsGrid, 'Materie', stats.materie);
+      }
+    }
+
+    function addStatCard(container, label, value) {
+      var card = document.createElement('div');
+      card.className = 'stat-card';
+      card.innerHTML =
+        '<div class="stat-label">' + label + '</div>' +
+        '<div class="stat-value">' + value + '</div>';
+      container.appendChild(card);
+    }
+
+    function parseStats(lines) {
+      var stats = {};
+      lines.forEach(function(line) {
+        if (line.indexOf('Righe totali output:') !== -1 || line.indexOf('Righe output:') !== -1) {
+          stats.righeOutput = line.split(':')[1].trim();
+        }
+        if (line.indexOf('Studenti totali:') !== -1 || line.indexOf('Studenti:') !== -1) {
+          stats.studenti = line.split(':')[1].trim();
+        }
+        if (line.indexOf('Classi:') !== -1) {
+          stats.classi = line.split(':')[1].trim();
+        }
+        if (line.indexOf('Materie:') !== -1 || line.indexOf('Materie elaborate:') !== -1) {
+          stats.materie = line.split(':')[1].trim();
+        }
+      });
+      return stats;
+    }
+
+    // Download CSV
+    function downloadCSV() {
+      var blob = new Blob([state.csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      var timestamp = new Date().toISOString().slice(2, 16).replace(/[-:T]/g, '');
+      link.href = url;
+      link.download = (state.processType === 'voti-finali' ? 'Voti_Complessivo_' : 'PrimoPeriodo_') + timestamp + '.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast('File CSV scaricato', 'success');
+    }
+
+    // Download Report
+    function downloadReport() {
+      var text = state.reportLines.join('\n');
+      var blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      var timestamp = new Date().toISOString().slice(2, 16).replace(/[-:T]/g, '');
+      link.href = url;
+      link.download = 'Report_' + timestamp + '.txt';
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast('Report scaricato', 'success');
+    }
+
+    // Reset view
+    function resetView() {
+      document.getElementById('uploadView').classList.remove('hidden');
+      document.getElementById('resultsView').classList.add('hidden');
+
+      // Reset form
+      document.getElementById('diffSpreadsheet').value = '';
+      document.getElementById('diffSheet').innerHTML = '<option value="">-- Prima seleziona uno spreadsheet --</option>';
+      document.getElementById('allSpreadsheet').value = '';
+      document.getElementById('allSheet').innerHTML = '<option value="">-- Prima seleziona uno spreadsheet --</option>';
+      document.getElementById('ppSpreadsheet').value = '';
+      document.getElementById('ppSheet').innerHTML = '<option value="">-- Prima seleziona uno spreadsheet --</option>';
+
+      document.getElementById('diffPreview').classList.add('hidden');
+      document.getElementById('allPreview').classList.add('hidden');
+      document.getElementById('ppPreview').classList.add('hidden');
+
+      document.getElementById('progressContainer').classList.add('hidden');
+      document.getElementById('errorCard').classList.add('hidden');
+
+      var btn = document.getElementById('processBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-icons">play_arrow</span> Elabora File';
+
+      state.resultData = null;
+      state.reportLines = [];
+      state.csv = '';
+    }
+
+    // Show toast notification
+    function showToast(message, type) {
+      var container = document.getElementById('toastContainer');
+      var toast = document.createElement('div');
+      toast.className = 'toast ' + (type || '');
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(function() {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
