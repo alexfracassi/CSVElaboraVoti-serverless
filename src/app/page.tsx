@@ -8,24 +8,21 @@ import { Separator } from "@/components/ui/separator";
 import { FileUploadZone } from "@/components/file-upload-zone";
 import { ResultsTable } from "@/components/results-table";
 import { PrimoPeriodoControlliDashboard } from "@/components/primo-periodo-controlli-dashboard";
+import { VotiFinaliControlliDashboard } from "@/components/voti-finali-controlli-dashboard";
 import { parseSpreadsheetFile, exportToExcel } from "@/lib/file-parser";
 import { processVotiFiles } from "@/lib/voti-processor";
 import { processPrimoPeriodoFile } from "@/lib/primo-periodo-processor";
 import { calculatePrimoPeriodoStats } from "@/lib/primo-periodo-stats";
+import { parseReportLines } from "@/lib/report-parser";
 import type { OutputRow, PrimoPeriodoOutputRow, ProcessType } from "@/lib/voti-utils";
 import { toast } from "sonner";
 import {
   Download,
-  RefreshCw,
   FileSpreadsheet,
   Play,
   Loader2,
   Info,
   AlertCircle,
-  Users,
-  CheckCircle,
-  XCircle,
-  Clock,
   ArrowLeft,
   Calendar,
   CheckCircle2,
@@ -238,7 +235,6 @@ export default function HomePage() {
 
   // Voti Finali columns
   const votiFinaliColumns = [
-    { key: "CF", label: "CF" },
     { key: "Hash", label: "Hash" },
     { key: "Classe_Sigla", label: "Classe" },
     { key: "Materia", label: "Materia" },
@@ -429,100 +425,104 @@ export default function HomePage() {
     );
   }
 
-  // Results page for Voti Finali
+  // Results page for Voti Finali with Dashboard
   if (appState === "results" && processType === "voti-finali") {
-    const esitiRows = outputData.filter(r => r.Materia === "ESITO");
-    const ammessi = esitiRows.filter(r => r.EsitoFinale.toLowerCase() === "ammesso").length;
-    const nonAmmessi = esitiRows.filter(r => r.EsitoFinale.toLowerCase().includes("non ammesso")).length;
-    const sospesi = esitiRows.filter(r => r.EsitoIniziale.toLowerCase() === "sospeso").length;
+    const reportData = parseReportLines(reportLines);
+    const dataOra = reportLines.find(l => l.startsWith('Data/ora:'))?.replace('Data/ora:', '').trim() || '';
 
     return (
       <main className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="mb-6 flex items-center justify-between">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl font-bold">Risultati Voti Finali</h1>
-              <p className="text-muted-foreground">
-                {outputData.length} righe elaborate
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleBack}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Nuova Elaborazione
+              <Button variant="ghost" onClick={handleBack} className="mb-2 -ml-2">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Nuova elaborazione
               </Button>
-              <Button onClick={handleExportVotiFinali}>
-                <Download className="mr-2 h-4 w-4" />
-                Esporta Excel
-              </Button>
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+                Elaborazione Voti Finali Completata
+              </h1>
+              {dataOra && (
+                <p className="text-muted-foreground flex items-center gap-2 mt-1">
+                  <Calendar className="h-4 w-4" />
+                  {dataOra}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Stats cards for Voti Finali */}
-          {esitiRows.length > 0 && (
-            <div className="grid gap-4 md:grid-cols-4 mb-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Studenti</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{esitiRows.length}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Ammessi</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{ammessi}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Non Ammessi</CardTitle>
-                  <XCircle className="h-4 w-4 text-red-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{nonAmmessi}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Sospesi (Giugno)</CardTitle>
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">{sospesi}</div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Download Section */}
+          <Card className="mb-8 border-green-200 bg-green-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Scarica i File Elaborati
+              </CardTitle>
+              <CardDescription>
+                Scarica i risultati dell&apos;elaborazione nei formati disponibili
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <Button
+                  onClick={handleExportVotiFinali}
+                  size="lg"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <FileSpreadsheet className="h-5 w-5 mr-2" />
+                  Scarica Excel (.xlsx)
+                </Button>
+                <Button
+                  onClick={downloadReport}
+                  variant="outline"
+                  size="lg"
+                >
+                  <FileText className="h-5 w-5 mr-2" />
+                  Scarica Report
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Results Table */}
-          <Card className="mb-6">
+          {/* Privacy Notice */}
+          <Card className="mb-8 border-blue-200 bg-blue-50/50">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-blue-800">Dati Elaborati</h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    I dati degli scrutini differiti sono stati uniti con i dati completi. 
+                    Gli esiti iniziali e finali sono stati calcolati automaticamente.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator className="my-8" />
+
+          {/* Dashboard Controlli Voti Finali */}
+          <div className="mb-8">
+            <VotiFinaliControlliDashboard reportData={reportData} />
+          </div>
+
+          <Separator className="my-8" />
+
+          {/* Data Table */}
+          <Card>
             <CardHeader>
               <CardTitle>Dati Elaborati</CardTitle>
+              <CardDescription>
+                {outputData.length} righe elaborate
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ResultsTable data={outputData} columns={votiFinaliColumns} pageSize={25} />
             </CardContent>
           </Card>
-
-          {/* Report */}
-          {reportLines.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Report di Controllo</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="text-xs bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 whitespace-pre-wrap">
-                  {reportLines.join("\n")}
-                </pre>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </main>
     );
