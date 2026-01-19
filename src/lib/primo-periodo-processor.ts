@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  normalizeSpacesUpper,
   numericOrEmpty,
   isValidCF,
   base64sha1,
@@ -12,12 +11,11 @@ import {
 } from './voti-utils';
 
 // Materie da escludere (non sono materie didattiche)
+// NOTA: COMPORTAMENTO NON è escluso, viene mantenuto
 const MATERIE_ESCLUSE = [
   'RELIGIONE',
   'ATTIVITA ALTERNATIVA',
   'ATTIVITÀ ALTERNATIVA',
-  'COMPORTAMENTO',
-  'CONDOTTA',
   'EDUCAZIONE CIVICA',
   'ED. CIVICA',
 ];
@@ -266,7 +264,7 @@ export async function processPrimoPeriodoFile(
   reportLines.push(`Righe elaborate: ${righeProcessate}`);
   reportLines.push(`Righe skippate (CF non valido): ${righeSkippate}`);
   reportLines.push(`CF non validi trovati: ${invalidCFCount}`);
-  reportLines.push(`Materie escluse (non didattiche): ${materieEscluse}`);
+  reportLines.push(`Materie escluse (religione, ed. civica): ${materieEscluse}`);
   reportLines.push(`Studenti unici (CF validi): ${uniqueCFs.size}`);
 
   // Students per class
@@ -356,7 +354,7 @@ export async function processPrimoPeriodoFile(
   reportLines.push(`Classi: ${studentiPerClasse.size}`);
   reportLines.push(`Materie: ${materieUniche.size}`);
   reportLines.push("\n✅ Codici fiscali anonimizzati con hash");
-  reportLines.push("✅ Materie non didattiche rimosse");
+  reportLines.push("✅ Materie non didattiche rimosse (religione, ed. civica)");
 
   return { outputData: outputRows, reportLines, errors };
 }

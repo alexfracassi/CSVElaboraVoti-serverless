@@ -233,7 +233,7 @@ export default function HomePage() {
   const canProcessPrimoPeriodo = primoPeriodoData.length > 0 && !isProcessing;
   const canProcess = processType === "voti-finali" ? canProcessVotiFinali : canProcessPrimoPeriodo;
 
-  // Voti Finali columns
+  // Voti Finali columns - SENZA CF (solo Hash per privacy)
   const votiFinaliColumns = [
     { key: "Hash", label: "Hash" },
     { key: "Classe_Sigla", label: "Classe" },
@@ -250,6 +250,8 @@ export default function HomePage() {
           className += "bg-red-100 text-red-800";
         } else if (esito.includes("sospeso")) {
           className += "bg-yellow-100 text-yellow-800";
+        } else if (esito === "nc" || esito === "n.c.") {
+          className += "bg-purple-100 text-purple-800";
         } else {
           className += "bg-gray-100 text-gray-800";
         }
@@ -269,6 +271,8 @@ export default function HomePage() {
           className += "bg-red-100 text-red-800";
         } else if (esito.includes("sospeso")) {
           className += "bg-yellow-100 text-yellow-800";
+        } else if (esito === "nc" || esito === "n.c.") {
+          className += "bg-purple-100 text-purple-800";
         } else {
           className += "bg-gray-100 text-gray-800";
         }

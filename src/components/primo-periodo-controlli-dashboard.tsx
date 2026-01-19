@@ -19,7 +19,9 @@ import {
   PieChart as PieChartIcon,
   Target,
   Award,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  HelpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PrimoPeriodoStats } from '@/lib/primo-periodo-stats';
@@ -239,7 +241,7 @@ export function PrimoPeriodoControlliDashboard({ stats, reportLines }: PrimoPeri
     
     result.push({
       titolo: 'Materie Elaborate',
-      descrizione: `${stats.totaleMaterie} materie didattiche analizzate`,
+      descrizione: `${stats.totaleMaterie} materie analizzate`,
       stato: 'ok',
       valore: stats.totaleMaterie
     });
@@ -267,6 +269,30 @@ export function PrimoPeriodoControlliDashboard({ stats, reportLines }: PrimoPeri
       descrizione: stats.mediaVotiOrali >= 6 ? 'Media sufficiente' : 'Media insufficiente',
       stato: stats.mediaVotiOrali >= 6 ? 'ok' : 'warning',
       valore: stats.mediaVotiOrali.toFixed(2)
+    });
+    
+    // Controllo NC
+    result.push({
+      titolo: 'Voti NC (Non Classificato)',
+      descrizione: stats.studentiConNC.length > 0 
+        ? `${stats.studentiConNC.length} studenti con voti NC` 
+        : 'Nessuno studente con voti NC',
+      stato: stats.studentiConNC.length > 0 ? 'warning' : 'ok',
+      valore: stats.totaleVotiNC,
+      dettaglio: stats.studentiConNC.length > 0 ? `${stats.studentiConNC.length} studenti coinvolti` : undefined
+    });
+    
+    // Controllo Assenze
+    result.push({
+      titolo: `Assenze Elevate (>${stats.sogliaAssenze}h)`,
+      descrizione: stats.studentiConMolteAssenze.length > 0 
+        ? `${stats.studentiConMolteAssenze.length} studenti con molte assenze` 
+        : 'Nessuno studente con assenze elevate',
+      stato: stats.studentiConMolteAssenze.length > 0 ? 'warning' : 'ok',
+      valore: stats.studentiConMolteAssenze.length,
+      dettaglio: stats.studentiConMolteAssenze.length > 0 
+        ? `Soglia: ${stats.sogliaAssenze} ore totali` 
+        : undefined
     });
     
     return result;
@@ -348,6 +374,69 @@ export function PrimoPeriodoControlliDashboard({ stats, reportLines }: PrimoPeri
         />
       </div>
 
+      {/* NC e Assenze Alert */}
+      {(stats.studentiConNC.length > 0 || stats.studentiConMolteAssenze.length > 0) && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {stats.studentiConNC.length > 0 && (
+            <Card className="border-purple-200 bg-purple-50/50 dark:border-purple-800 dark:bg-purple-950/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                  <HelpCircle className="h-5 w-5" />
+                  Studenti con Voti NC
+                </CardTitle>
+                <CardDescription>
+                  {stats.studentiConNC.length} studenti hanno voti &quot;Non Classificato&quot;
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {stats.studentiConNC.slice(0, 10).map((s, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="font-mono">{s.hash.slice(0, 8)}... ({s.classe})</span>
+                      <span className="text-muted-foreground">{s.dettaglio}</span>
+                    </div>
+                  ))}
+                  {stats.studentiConNC.length > 10 && (
+                    <p className="text-xs text-muted-foreground">
+                      ... e altri {stats.studentiConNC.length - 10} studenti
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {stats.studentiConMolteAssenze.length > 0 && (
+            <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                  <Clock className="h-5 w-5" />
+                  Studenti con Molte Assenze
+                </CardTitle>
+                <CardDescription>
+                  {stats.studentiConMolteAssenze.length} studenti con più di {stats.sogliaAssenze} ore di assenza
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {stats.studentiConMolteAssenze.slice(0, 10).map((s, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="font-mono">{s.hash.slice(0, 8)}... ({s.classe})</span>
+                      <span className="text-muted-foreground font-medium">{s.dettaglio}</span>
+                    </div>
+                  ))}
+                  {stats.studentiConMolteAssenze.length > 10 && (
+                    <p className="text-xs text-muted-foreground">
+                      ... e altri {stats.studentiConMolteAssenze.length - 10} studenti
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
       {/* Distribuzione Insufficienze */}
       <Card>
         <CardHeader>
@@ -423,6 +512,11 @@ export function PrimoPeriodoControlliDashboard({ stats, reportLines }: PrimoPeri
                       {index + 1}.
                     </span>
                     <span className="font-medium">{materia.materia}</span>
+                    {materia.votiNC > 0 && (
+                      <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                        {materia.votiNC} NC
+                      </Badge>
+                    )}
                   </div>
                   <div className="text-right">
                     <span className="font-bold text-red-600">
