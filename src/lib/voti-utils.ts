@@ -219,7 +219,6 @@ export function cleanMateria(materia: string): string {
 export type ProcessType = 'voti-finali' | 'primo-periodo';
 
 export interface OutputRow {
-  CF: string;
   Hash: string;
   Materia: string;
   Classe_Sigla: string;

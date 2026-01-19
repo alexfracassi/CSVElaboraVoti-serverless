@@ -27,7 +27,7 @@ export function ResultsTable({ data }: ResultsTableProps) {
   const filteredData = data.filter(row => {
     const search = searchTerm.toLowerCase();
     return (
-      row.CF.toLowerCase().includes(search) ||
+      row.Hash.toLowerCase().includes(search) ||
       row.Materia.toLowerCase().includes(search) ||
       row.Classe_Sigla.toLowerCase().includes(search) ||
       row.EsitoIniziale.toLowerCase().includes(search) ||
@@ -44,7 +44,7 @@ export function ResultsTable({ data }: ResultsTableProps) {
       <div className="flex items-center gap-2">
         <Search className="h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Cerca per CF, materia, classe, esito..."
+          placeholder="Cerca per hash, materia, classe, esito..."
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -62,7 +62,6 @@ export function ResultsTable({ data }: ResultsTableProps) {
           <Table>
             <TableHeader className="sticky top-0 bg-background">
               <TableRow>
-                <TableHead className="min-w-[150px]">CF</TableHead>
                 <TableHead>Hash</TableHead>
                 <TableHead className="min-w-[200px]">Materia</TableHead>
                 <TableHead>Classe</TableHead>
@@ -76,8 +75,7 @@ export function ResultsTable({ data }: ResultsTableProps) {
             </TableHeader>
             <TableBody>
               {paginatedData.map((row, index) => (
-                <TableRow key={`${row.CF}-${row.Materia}-${index}`}>
-                  <TableCell className="font-mono text-xs">{row.CF}</TableCell>
+                <TableRow key={`${row.Hash}-${row.Materia}-${index}`}>
                   <TableCell className="font-mono text-xs">{row.Hash}</TableCell>
                   <TableCell>{row.Materia}</TableCell>
                   <TableCell>{row.Classe_Sigla}</TableCell>
