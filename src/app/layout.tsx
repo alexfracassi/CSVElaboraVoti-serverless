@@ -3,8 +3,8 @@ import "./globals.css";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "CSV Elabora Voti - Serverless",
-  description: "Elaborazione voti scolastici - Versione Serverless",
+  title: "CSV Elabora Voti",
+  description: "Elaborazione voti scolastici",
 };
 
 export default function RootLayout({

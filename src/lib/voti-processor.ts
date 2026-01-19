@@ -28,133 +28,73 @@ export async function processVotiFiles(
 ): Promise<ProcessingResult> {
   const errors: string[] = [];
   const reportLines: string[] = [];
-
-  // Track column detection for both files
-  const diffColumnsFound: string[] = [];
-  const diffColumnsMissing: string[] = [];
-  const allColumnsFound: string[] = [];
-  const allColumnsMissing: string[] = [];
-
+  
   if (diffData.length === 0) {
     errors.push("Il file degli scrutini differiti è vuoto");
     return { outputData: [], reportLines, errors };
   }
-
+  
   if (allData.length === 0) {
     errors.push("Il file completo è vuoto");
     return { outputData: [], reportLines, errors };
   }
-
+  
   const diffHeaders = Object.keys(diffData[0]);
   const allHeaders = Object.keys(allData[0]);
   
   // ------- Colonne differiti -------
   const idxCognD = findCol(diffHeaders, ["cognome"], false);
   const idxNomeD = findCol(diffHeaders, ["nome"], false);
-  const idxMatD = findCol(diffHeaders, ["materia", "materia_desc"], false);
-
-  // Track required columns
-  if (idxCognD !== null) diffColumnsFound.push("cognome");
-  else diffColumnsMissing.push("cognome (REQUIRED)");
-  if (idxNomeD !== null) diffColumnsFound.push("nome");
-  else diffColumnsMissing.push("nome (REQUIRED)");
-  if (idxMatD !== null) diffColumnsFound.push("materia");
-  else diffColumnsMissing.push("materia (REQUIRED)");
-
+  const idxMatD = findCol(diffHeaders, ["materia", "materia_desc"]);
+  
   const colSiglaD = diffHeaders.includes("classe_sigla") ? "classe_sigla" : null;
   const colAnnoD = diffHeaders.includes("classe_anno_corso") ? "classe_anno_corso" : null;
   const colDescD = diffHeaders.includes("classe_indirizzo") ? "classe_indirizzo" : null;
   const colClasseD = diffHeaders.includes("classe") ? "classe" : null;
-
-  // Track class columns
-  if (colSiglaD) diffColumnsFound.push("classe_sigla");
-  else diffColumnsMissing.push("classe_sigla");
-  if (colAnnoD) diffColumnsFound.push("classe_anno_corso");
-  else diffColumnsMissing.push("classe_anno_corso");
-  if (colDescD) diffColumnsFound.push("classe_indirizzo");
-  else diffColumnsMissing.push("classe_indirizzo");
-  if (colClasseD) diffColumnsFound.push("classe");
-  else diffColumnsMissing.push("classe");
-
-  const votoInitIdx = findCol(diffHeaders, ["voto"], false);
-  const votoDiffIdx = findCol(diffHeaders, ["voto_differito", "voto differito"], false);
-  const esitoDiffIdx = findCol(diffHeaders, ["esito_differito", "esito differito"], false);
+  
+  const votoInitIdx = findCol(diffHeaders, ["voto"]);
+  const votoDiffIdx = findCol(diffHeaders, ["voto_differito", "voto differito"]);
+  const esitoDiffIdx = findCol(diffHeaders, ["esito_differito", "esito differito"]);
   const esitoInitIdx = findCol(diffHeaders, ["esito"], false);
-
+  
   const colVotoInitD = votoInitIdx !== null ? diffHeaders[votoInitIdx] : null;
   const colVotoDiffD = votoDiffIdx !== null ? diffHeaders[votoDiffIdx] : null;
   const colEsitoDiffD = esitoDiffIdx !== null ? diffHeaders[esitoDiffIdx] : null;
   const colEsitoInitD = esitoInitIdx !== null ? diffHeaders[esitoInitIdx] : null;
-
-  // Track voto/esito columns
-  if (colVotoInitD) diffColumnsFound.push("voto");
-  else diffColumnsMissing.push("voto");
-  if (colVotoDiffD) diffColumnsFound.push("voto_differito");
-  else diffColumnsMissing.push("voto_differito");
-  if (colEsitoDiffD) diffColumnsFound.push("esito_differito");
-  else diffColumnsMissing.push("esito_differito");
-  if (colEsitoInitD) diffColumnsFound.push("esito");
-  else diffColumnsMissing.push("esito");
-
+  
   if (idxCognD === null || idxNomeD === null || idxMatD === null) {
     errors.push("Nel file differiti non trovo almeno uno tra: cognome, nome, materia");
     return { outputData: [], reportLines, errors };
   }
-
+  
   const cognColD = diffHeaders[idxCognD];
   const nomeColD = diffHeaders[idxNomeD];
   const matColD = diffHeaders[idxMatD];
   
   // ------- Colonne tutti gli studenti -------
-  const cfIdx = findCol(allHeaders, ["codice_fisc", "codice fiscale", "cf", "codicefiscale"], false);
+  const cfIdx = findCol(allHeaders, ["codice_fisc", "codice fiscale", "cf", "codicefiscale"]);
   const colCfA = cfIdx !== null ? allHeaders[cfIdx] : null;
-
-  // Track CF column
-  if (colCfA) allColumnsFound.push("codice_fiscale");
-  else allColumnsMissing.push("codice_fiscale");
-
-  const idxMatA = findCol(allHeaders, ["materia_desc", "materia"], false);
-  const valIdx = findCol(allHeaders, ["valore", "voto", "esito"], false);
-
-  // Track required columns
-  if (idxMatA !== null) allColumnsFound.push("materia");
-  else allColumnsMissing.push("materia (REQUIRED)");
-  if (valIdx !== null) allColumnsFound.push("valore");
-  else allColumnsMissing.push("valore (REQUIRED)");
-
+  
+  const idxMatA = findCol(allHeaders, ["materia_desc", "materia"]);
+  const valIdx = findCol(allHeaders, ["valore", "voto", "esito"]);
+  
   if (idxMatA === null || valIdx === null) {
     errors.push("Nel file completo non trovo almeno uno tra: materia/materia_desc, valore");
     return { outputData: [], reportLines, errors };
   }
-
+  
   const matColA = allHeaders[idxMatA];
   const colValA = allHeaders[valIdx];
-
+  
   const colSiglaA = allHeaders.includes("classe_sigla") ? "classe_sigla" : null;
   const colAnnoA = allHeaders.includes("classe_anno_corso") ? "classe_anno_corso" : null;
   const colDescA = allHeaders.includes("classe_desc") ? "classe_desc" : null;
   const colClasseA = allHeaders.includes("classe") ? "classe" : null;
-
-  // Track class columns
-  if (colSiglaA) allColumnsFound.push("classe_sigla");
-  else allColumnsMissing.push("classe_sigla");
-  if (colAnnoA) allColumnsFound.push("classe_anno_corso");
-  else allColumnsMissing.push("classe_anno_corso");
-  if (colDescA) allColumnsFound.push("classe_desc");
-  else allColumnsMissing.push("classe_desc");
-  if (colClasseA) allColumnsFound.push("classe");
-  else allColumnsMissing.push("classe");
-
+  
   const idxCognA = findCol(allHeaders, ["cognome"], false);
   const idxNomeA = findCol(allHeaders, ["nome"], false);
   const cognColA = idxCognA !== null ? allHeaders[idxCognA] : null;
   const nomeColA = idxNomeA !== null ? allHeaders[idxNomeA] : null;
-
-  // Track name columns
-  if (cognColA) allColumnsFound.push("cognome");
-  else allColumnsMissing.push("cognome");
-  if (nomeColA) allColumnsFound.push("nome");
-  else allColumnsMissing.push("nome");
   
   // ------- CF6 per chiave tecnica -------
   const diffWithKeys: RowWithKeys[] = diffData.map(r => {
@@ -269,13 +209,14 @@ export async function processVotiFiles(
     }
   }
   
-  // ------- Costruzione output (SENZA colonna CF) -------
+  // ------- Costruzione output -------
   const outputRows: OutputRow[] = [];
   
   for (const r of allWithKeys) {
     const keySM = r._KEY_SM;
     const keyS = r._KEY_S;
     
+    const CF = colCfA ? String(r[colCfA] || '').trim() : '';
     const { anno, sezione } = splitSigla(r._CL_SIGLA);
     const classeSigla = (anno && sezione) ? `${anno}${sezione}` : r._CL_SIGLA;
     
@@ -306,8 +247,8 @@ export async function processVotiFiles(
     const hc = hashMap.get(keyS) || '';
     const hashForCsv = hc ? `'${hc}` : '';
     
-    // Output SENZA CF - solo Hash per privacy
     outputRows.push({
+      CF,
       Hash: hashForCsv,
       Materia: materiaOut,
       Classe_Sigla: classeSigla,
@@ -320,10 +261,10 @@ export async function processVotiFiles(
     });
   }
   
-  // ------- Ordinamento (per Hash invece di CF) -------
+  // ------- Ordinamento -------
   outputRows.sort((a, b) => {
-    const hashCmp = a.Hash.localeCompare(b.Hash);
-    if (hashCmp !== 0) return hashCmp;
+    const cfCmp = a.CF.localeCompare(b.CF);
+    if (cfCmp !== 0) return cfCmp;
     
     const annoCmp = a.Anno.localeCompare(b.Anno);
     if (annoCmp !== 0) return annoCmp;
@@ -345,24 +286,7 @@ export async function processVotiFiles(
   reportLines.push(`Data/ora: ${now.toLocaleString('it-IT')}`);
   reportLines.push("=".repeat(60));
   reportLines.push("");
-
-  // COLUMN DETECTION SECTION
-  reportLines.push("RILEVAMENTO COLONNE");
-  reportLines.push("-".repeat(40));
-
-  reportLines.push("\nFile Scrutini Differiti:");
-  reportLines.push(`  Colonne trovate (${diffColumnsFound.length}): ${diffColumnsFound.join(", ") || "nessuna"}`);
-  if (diffColumnsMissing.length > 0) {
-    reportLines.push(`  Colonne mancanti (${diffColumnsMissing.length}): ${diffColumnsMissing.join(", ")}`);
-  }
-
-  reportLines.push("\nFile Completo Studenti:");
-  reportLines.push(`  Colonne trovate (${allColumnsFound.length}): ${allColumnsFound.join(", ") || "nessuna"}`);
-  if (allColumnsMissing.length > 0) {
-    reportLines.push(`  Colonne mancanti (${allColumnsMissing.length}): ${allColumnsMissing.join(", ")}`);
-  }
-  reportLines.push("");
-
+  
   // A) STATISTICHE GENERALI
   reportLines.push("A) STATISTICHE GENERALI");
   reportLines.push("-".repeat(40));
@@ -370,11 +294,11 @@ export async function processVotiFiles(
   const dfStudenti = outputRows.filter(r => r.Materia !== 'ESITO');
   
   if (dfStudenti.length > 0) {
-    const studentiUnici = new Map<string, { Hash: string; Anno: string; Sezione: string }>();
+    const studentiUnici = new Map<string, { CF: string; Anno: string; Sezione: string }>();
     for (const r of dfStudenti) {
-      const key = `${r.Hash}|${r.Anno}|${r.Sezione}`;
+      const key = `${r.CF}|${r.Anno}|${r.Sezione}`;
       if (!studentiUnici.has(key)) {
-        studentiUnici.set(key, { Hash: r.Hash, Anno: r.Anno, Sezione: r.Sezione });
+        studentiUnici.set(key, { CF: r.CF, Anno: r.Anno, Sezione: r.Sezione });
       }
     }
     
@@ -459,28 +383,27 @@ export async function processVotiFiles(
   reportLines.push("\nB) CONTROLLI DI COERENZA");
   reportLines.push("-".repeat(40));
   
-  // NOTA: COMPORTAMENTO non è più escluso dai controlli
-  const ESCLUDI_MATERIE = ['ESITO', 'ASSENZE', 'CREDITO'];
+  const ESCLUDI_MATERIE = ['ESITO', 'ASSENZE', 'COMPORTAMENTO', 'CREDITO'];
   
   const isMateriaValida = (materia: string): boolean => {
     const materiaUpper = materia.toUpperCase();
     return !ESCLUDI_MATERIE.some(esclusa => materiaUpper.includes(esclusa));
   };
   
-  const hashSospesi = new Set(
-    dfEsiti.filter(r => r.EsitoIniziale.toLowerCase() === 'sospeso').map(r => r.Hash)
+  const cfSospesi = new Set(
+    dfEsiti.filter(r => r.EsitoIniziale.toLowerCase() === 'sospeso').map(r => r.CF)
   );
   
-  if (hashSospesi.size > 0) {
-    reportLines.push(`\nStudenti con scrutinio sospeso: ${hashSospesi.size}`);
+  if (cfSospesi.size > 0) {
+    reportLines.push(`\nStudenti con scrutinio sospeso: ${cfSospesi.size}`);
     
     // Check 1: Voti iniziali dei sospesi
     reportLines.push("\n1) Controllo voti iniziali studenti sospesi:");
     reportLines.push("   (dovrebbero avere almeno una insufficienza nelle materie didattiche)");
     
-    const anomalieVotiAlti: Array<{ hash: string; minVoto: number }> = [];
-    for (const hash of hashSospesi) {
-      const materieStud = outputRows.filter(r => r.Hash === hash && isMateriaValida(r.Materia));
+    const anomalieVotiAlti: Array<{ cf: string; minVoto: number }> = [];
+    for (const cf of cfSospesi) {
+      const materieStud = outputRows.filter(r => r.CF === cf && isMateriaValida(r.Materia));
       const votiNumerici = materieStud
         .map(r => parseFloat(r.EsitoInizialeNumerico))
         .filter(v => !isNaN(v));
@@ -488,15 +411,15 @@ export async function processVotiFiles(
       if (votiNumerici.length > 0) {
         const minVoto = Math.min(...votiNumerici);
         if (minVoto >= 6) {
-          anomalieVotiAlti.push({ hash, minVoto });
+          anomalieVotiAlti.push({ cf, minVoto });
         }
       }
     }
     
     if (anomalieVotiAlti.length > 0) {
       reportLines.push(`\n   ⚠️  ANOMALIA: ${anomalieVotiAlti.length} studenti sospesi senza insufficienze:`);
-      for (const { hash, minVoto } of anomalieVotiAlti.slice(0, 5)) {
-        reportLines.push(`      Hash: ${hash.slice(0, 8)}... - voto minimo: ${minVoto}`);
+      for (const { cf, minVoto } of anomalieVotiAlti.slice(0, 5)) {
+        reportLines.push(`      CF: ${cf.slice(0, 6)}... - voto minimo: ${minVoto}`);
       }
     } else {
       reportLines.push("   ✅ OK: Tutti gli studenti sospesi hanno almeno un'insufficienza");
@@ -506,24 +429,24 @@ export async function processVotiFiles(
     reportLines.push("\n2) Controllo voti finali studenti sospesi poi ammessi:");
     reportLines.push("   (dovrebbero avere tutti voti >= 6)");
     
-    const hashAmmessiDopoSosp = new Set(
+    const cfAmmessiDopoSosp = new Set(
       dfEsiti.filter(r => 
         r.EsitoIniziale.toLowerCase() === 'sospeso' && 
         r.EsitoFinale.toLowerCase() === 'ammesso'
-      ).map(r => r.Hash)
+      ).map(r => r.CF)
     );
     
-    if (hashAmmessiDopoSosp.size > 0) {
-      reportLines.push(`   Studenti ammessi dopo sospensione: ${hashAmmessiDopoSosp.size}`);
+    if (cfAmmessiDopoSosp.size > 0) {
+      reportLines.push(`   Studenti ammessi dopo sospensione: ${cfAmmessiDopoSosp.size}`);
       
-      const anomalieVotiBassiFinali: Array<{ hash: string; voto: number; materia: string }> = [];
-      for (const hash of hashAmmessiDopoSosp) {
-        const materieStud = outputRows.filter(r => r.Hash === hash && isMateriaValida(r.Materia));
+      const anomalieVotiBassiFinali: Array<{ cf: string; voto: number; materia: string }> = [];
+      for (const cf of cfAmmessiDopoSosp) {
+        const materieStud = outputRows.filter(r => r.CF === cf && isMateriaValida(r.Materia));
         
         for (const r of materieStud) {
           const votoFinale = parseFloat(r.EsitoFinaleNumerico);
           if (!isNaN(votoFinale) && votoFinale < 6) {
-            anomalieVotiBassiFinali.push({ hash, voto: votoFinale, materia: r.Materia });
+            anomalieVotiBassiFinali.push({ cf, voto: votoFinale, materia: r.Materia });
             break;
           }
         }
@@ -531,8 +454,8 @@ export async function processVotiFiles(
       
       if (anomalieVotiBassiFinali.length > 0) {
         reportLines.push(`\n   ⚠️  ANOMALIA: ${anomalieVotiBassiFinali.length} studenti ammessi con insufficienze:`);
-        for (const { hash, voto, materia } of anomalieVotiBassiFinali.slice(0, 5)) {
-          reportLines.push(`      Hash: ${hash.slice(0, 8)}... - ${materia}: ${voto}`);
+        for (const { cf, voto, materia } of anomalieVotiBassiFinali.slice(0, 5)) {
+          reportLines.push(`      CF: ${cf.slice(0, 6)}... - ${materia}: ${voto}`);
         }
       } else {
         reportLines.push("   ✅ OK: Tutti gli studenti ammessi hanno voti >= 6");
@@ -543,18 +466,18 @@ export async function processVotiFiles(
     reportLines.push("\n3) Controllo materie con voti modificati:");
     reportLines.push("   (solo materie didattiche)");
     
-    const hashNonAmmessiDopoSosp = new Set(
+    const cfNonAmmessiDopoSosp = new Set(
       dfEsiti.filter(r => 
         r.EsitoIniziale.toLowerCase() === 'sospeso' && 
         r.EsitoFinale.toLowerCase() !== 'ammesso'
-      ).map(r => r.Hash)
+      ).map(r => r.CF)
     );
     
-    if (hashAmmessiDopoSosp.size > 0) {
-      reportLines.push(`\n   3a) Studenti AMMESSI dopo sospensione (${hashAmmessiDopoSosp.size} studenti):`);
+    if (cfAmmessiDopoSosp.size > 0) {
+      reportLines.push(`\n   3a) Studenti AMMESSI dopo sospensione (${cfAmmessiDopoSosp.size} studenti):`);
       
       const materieModificateAmmessi = outputRows.filter(r =>
-        hashAmmessiDopoSosp.has(r.Hash) &&
+        cfAmmessiDopoSosp.has(r.CF) &&
         isMateriaValida(r.Materia) &&
         r.EsitoIniziale !== r.EsitoFinale
       );
@@ -562,26 +485,26 @@ export async function processVotiFiles(
       if (materieModificateAmmessi.length > 0) {
         reportLines.push(`       Materie con voto modificato: ${materieModificateAmmessi.length}`);
         
-        const anomalieAmmessi: Array<{ hash: string; materia: string; votoIniz: number; votoFin: number; motivo: string }> = [];
+        const anomalieAmmessi: Array<{ cf: string; materia: string; votoIniz: number; votoFin: number; motivo: string }> = [];
         for (const row of materieModificateAmmessi) {
           const votoIniz = parseFloat(row.EsitoInizialeNumerico);
           const votoFin = parseFloat(row.EsitoFinaleNumerico);
           
           if (!isNaN(votoIniz) && !isNaN(votoFin)) {
             if (votoIniz >= 6) {
-              anomalieAmmessi.push({ hash: row.Hash, materia: row.Materia, votoIniz, votoFin, motivo: 'Voto iniziale già sufficiente' });
+              anomalieAmmessi.push({ cf: row.CF, materia: row.Materia, votoIniz, votoFin, motivo: 'Voto iniziale già sufficiente' });
             } else if (votoFin < 6) {
-              anomalieAmmessi.push({ hash: row.Hash, materia: row.Materia, votoIniz, votoFin, motivo: 'Voto finale ancora insufficiente' });
+              anomalieAmmessi.push({ cf: row.CF, materia: row.Materia, votoIniz, votoFin, motivo: 'Voto finale ancora insufficiente' });
             } else if (votoFin < votoIniz) {
-              anomalieAmmessi.push({ hash: row.Hash, materia: row.Materia, votoIniz, votoFin, motivo: 'Voto finale diminuito' });
+              anomalieAmmessi.push({ cf: row.CF, materia: row.Materia, votoIniz, votoFin, motivo: 'Voto finale diminuito' });
             }
           }
         }
         
         if (anomalieAmmessi.length > 0) {
           reportLines.push(`\n       ⚠️  ANOMALIE in ${anomalieAmmessi.length} casi:`);
-          for (const { hash, materia, votoIniz, votoFin, motivo } of anomalieAmmessi.slice(0, 5)) {
-            reportLines.push(`          ${hash.slice(0, 8)}... - ${materia.slice(0, 30)}: ${votoIniz}->${votoFin} (${motivo})`);
+          for (const { cf, materia, votoIniz, votoFin, motivo } of anomalieAmmessi.slice(0, 5)) {
+            reportLines.push(`          ${cf.slice(0, 6)}... - ${materia.slice(0, 30)}: ${votoIniz}->${votoFin} (${motivo})`);
           }
         } else {
           reportLines.push("       ✅ OK: Tutti i voti modificati sono coerenti (da <6 a >=6)");
@@ -591,13 +514,13 @@ export async function processVotiFiles(
       }
     }
     
-    if (hashNonAmmessiDopoSosp.size > 0) {
-      reportLines.push(`\n   3b) Studenti NON AMMESSI dopo sospensione (${hashNonAmmessiDopoSosp.size} studenti):`);
+    if (cfNonAmmessiDopoSosp.size > 0) {
+      reportLines.push(`\n   3b) Studenti NON AMMESSI dopo sospensione (${cfNonAmmessiDopoSosp.size} studenti):`);
       reportLines.push("       (dovrebbero avere almeno un voto finale < 6)");
       
-      const anomalieNonAmmessi: Array<{ hash: string; minVoto: number }> = [];
-      for (const hash of hashNonAmmessiDopoSosp) {
-        const materieStud = outputRows.filter(r => r.Hash === hash && isMateriaValida(r.Materia));
+      const anomalieNonAmmessi: Array<{ cf: string; minVoto: number }> = [];
+      for (const cf of cfNonAmmessiDopoSosp) {
+        const materieStud = outputRows.filter(r => r.CF === cf && isMateriaValida(r.Materia));
         const votiFinali = materieStud
           .map(r => parseFloat(r.EsitoFinaleNumerico))
           .filter(v => !isNaN(v));
@@ -605,15 +528,15 @@ export async function processVotiFiles(
         if (votiFinali.length > 0) {
           const minVotoFinale = Math.min(...votiFinali);
           if (minVotoFinale >= 6) {
-            anomalieNonAmmessi.push({ hash, minVoto: minVotoFinale });
+            anomalieNonAmmessi.push({ cf, minVoto: minVotoFinale });
           }
         }
       }
       
       if (anomalieNonAmmessi.length > 0) {
         reportLines.push(`\n       ⚠️  ANOMALIA: ${anomalieNonAmmessi.length} studenti non ammessi senza insufficienze:`);
-        for (const { hash, minVoto } of anomalieNonAmmessi.slice(0, 5)) {
-          reportLines.push(`          Hash: ${hash.slice(0, 8)}... - voto minimo: ${minVoto}`);
+        for (const { cf, minVoto } of anomalieNonAmmessi.slice(0, 5)) {
+          reportLines.push(`          CF: ${cf.slice(0, 6)}... - voto minimo: ${minVoto}`);
         }
       } else {
         reportLines.push("       ✅ OK: Tutti i non ammessi hanno almeno un'insufficienza finale");
@@ -629,8 +552,7 @@ export async function processVotiFiles(
   reportLines.push("-".repeat(40));
   reportLines.push(`Righe totali output: ${outputRows.length}`);
   reportLines.push(`Studenti totali: ${dfEsiti.length}`);
-  reportLines.push(`Studenti sospesi: ${hashSospesi.size}`);
-  reportLines.push("\n✅ Codici fiscali rimossi dall'output (solo Hash)");
+  reportLines.push(`Studenti sospesi: ${cfSospesi.size}`);
   
   return { outputData: outputRows, reportLines, errors };
 }

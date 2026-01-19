@@ -8,7 +8,6 @@ export interface MateriaStats {
   insufficienze: number;
   percentualeInsuff: number;
   media: number;
-  votiNC: number;
 }
 
 export interface StudenteInsuffStats {
@@ -22,13 +21,6 @@ export interface DistribuzioneInsufficienze {
   count: number;
   percentuale: number;
   colore: string;
-}
-
-export interface StudenteConProblemi {
-  hash: string;
-  classe: string;
-  problema: string;
-  dettaglio: string;
 }
 
 export interface PrimoPeriodoStats {
@@ -54,20 +46,10 @@ export interface PrimoPeriodoStats {
   mediaVotiOrali: number;
   mediaVotiScritti: number;
   percentualeInsuffTotale: number;
-  
-  // Nuovi controlli
-  studentiConNC: StudenteConProblemi[];
-  studentiConMolteAssenze: StudenteConProblemi[];
-  totaleVotiNC: number;
-  sogliaAssenze: number;
-}
-
-function isVotoNC(voto: string): boolean {
-  const upper = voto.toUpperCase().trim();
-  return upper === 'NC' || upper === 'N.C.' || upper === 'N/C' || upper === 'NON CLASSIFICATO';
 }
 
 function getVotoMigliore(row: PrimoPeriodoOutputRow): number | null {
+  // Prende il voto migliore tra scritto, orale e pratico
   const voti: number[] = [];
   
   if (row.VotoOraleNumerico) {
@@ -85,11 +67,8 @@ function getVotoMigliore(row: PrimoPeriodoOutputRow): number | null {
   
   if (voti.length === 0) return null;
   
+  // Per determinare insufficienza, prendiamo la media dei voti disponibili
   return voti.reduce((a, b) => a + b, 0) / voti.length;
-}
-
-function hasVotoNC(row: PrimoPeriodoOutputRow): boolean {
-  return isVotoNC(row.VotoOrale) || isVotoNC(row.VotoScritto) || isVotoNC(row.VotoPratico);
 }
 
 function getDistribuzioneColori(): string[] {
@@ -104,12 +83,13 @@ function getDistribuzioneColori(): string[] {
 
 export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): PrimoPeriodoStats {
   const colori = getDistribuzioneColori();
-  const SOGLIA_ASSENZE = 50; // Soglia per "molte assenze"
   
+  // Calcola statistiche base
   const uniqueStudents = new Set(data.map(r => r.Hash));
   const uniqueClasses = new Set(data.map(r => r.Classe_Sigla));
   const uniqueMaterie = new Set(data.map(r => r.Materia));
   
+  // Studenti per anno
   const studentiPerAnno = new Map<string, Set<string>>();
   for (const row of data) {
     if (!studentiPerAnno.has(row.Anno)) {
@@ -118,49 +98,43 @@ export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): Primo
     studentiPerAnno.get(row.Anno)!.add(row.Hash);
   }
   
+  // Converti in Map<string, number>
   const studentiPerAnnoCount = new Map<string, number>();
   for (const [anno, studenti] of studentiPerAnno) {
     studentiPerAnnoCount.set(anno, studenti.size);
   }
   
-  // Insufficienze per materia (con conteggio NC)
-  const materiaStats = new Map<string, { totale: number; insuff: number; somma: number; nc: number }>();
+  // Insufficienze per materia
+  const materiaStats = new Map<string, { totale: number; insuff: number; somma: number }>();
   
   for (const row of data) {
+    const voto = getVotoMigliore(row);
+    if (voto === null) continue;
+    
     if (!materiaStats.has(row.Materia)) {
-      materiaStats.set(row.Materia, { totale: 0, insuff: 0, somma: 0, nc: 0 });
+      materiaStats.set(row.Materia, { totale: 0, insuff: 0, somma: 0 });
     }
     
     const stats = materiaStats.get(row.Materia)!;
-    
-    if (hasVotoNC(row)) {
-      stats.nc++;
-      stats.totale++;
-    } else {
-      const voto = getVotoMigliore(row);
-      if (voto !== null) {
-        stats.totale++;
-        stats.somma += voto;
-        if (voto < 6) {
-          stats.insuff++;
-        }
-      }
+    stats.totale++;
+    stats.somma += voto;
+    if (voto < 6) {
+      stats.insuff++;
     }
   }
   
   const insufficienzePerMateria: MateriaStats[] = [];
   for (const [materia, stats] of materiaStats) {
-    const votiValidi = stats.totale - stats.nc;
     insufficienzePerMateria.push({
       materia,
       totaleVoti: stats.totale,
       insufficienze: stats.insuff,
-      percentualeInsuff: votiValidi > 0 ? (stats.insuff / votiValidi) * 100 : 0,
-      media: votiValidi > 0 ? stats.somma / votiValidi : 0,
-      votiNC: stats.nc,
+      percentualeInsuff: stats.totale > 0 ? (stats.insuff / stats.totale) * 100 : 0,
+      media: stats.totale > 0 ? stats.somma / stats.totale : 0,
     });
   }
   
+  // Ordina per percentuale insufficienze decrescente
   insufficienzePerMateria.sort((a, b) => b.percentualeInsuff - a.percentualeInsuff);
   
   // Calcola insufficienze per studente
@@ -179,11 +153,13 @@ export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): Primo
     }
   }
   
+  // Distribuzione tutta la scuola
   const distribuzioneScuola = calculateDistribuzione(
     Array.from(insuffPerStudente.values()).map(s => s.count),
     colori
   );
   
+  // Distribuzione per anno
   const distribuzionePerAnno = new Map<string, DistribuzioneInsufficienze[]>();
   const anni = [...new Set(data.map(r => r.Anno))].sort();
   
@@ -195,6 +171,7 @@ export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): Primo
     distribuzionePerAnno.set(anno, calculateDistribuzione(studentiAnno, colori));
   }
   
+  // Medie generali
   const votiOrali = data
     .map(r => parseFloat(r.VotoOraleNumerico))
     .filter(v => !isNaN(v));
@@ -211,6 +188,7 @@ export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): Primo
     ? votiScritti.reduce((a, b) => a + b, 0) / votiScritti.length 
     : 0;
   
+  // Percentuale insufficienze totale
   const tuttiVoti = data
     .map(r => getVotoMigliore(r))
     .filter((v): v is number => v !== null);
@@ -219,52 +197,6 @@ export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): Primo
   const percentualeInsuffTotale = tuttiVoti.length > 0 
     ? (insuffTotali / tuttiVoti.length) * 100 
     : 0;
-  
-  // Trova studenti con NC
-  const studentiConNCMap = new Map<string, { classe: string; materie: string[] }>();
-  let totaleVotiNC = 0;
-  
-  for (const row of data) {
-    if (hasVotoNC(row)) {
-      totaleVotiNC++;
-      if (!studentiConNCMap.has(row.Hash)) {
-        studentiConNCMap.set(row.Hash, { classe: row.Classe_Sigla, materie: [] });
-      }
-      studentiConNCMap.get(row.Hash)!.materie.push(row.Materia);
-    }
-  }
-  
-  const studentiConNC: StudenteConProblemi[] = Array.from(studentiConNCMap.entries()).map(([hash, info]) => ({
-    hash,
-    classe: info.classe,
-    problema: 'NC',
-    dettaglio: `${info.materie.length} materie: ${info.materie.slice(0, 3).join(', ')}${info.materie.length > 3 ? '...' : ''}`
-  }));
-  
-  // Trova studenti con molte assenze
-  const assenzePerStudente = new Map<string, { classe: string; totaleAssenze: number; materie: number }>();
-  
-  for (const row of data) {
-    const assenze = parseFloat(row.OreAssenzaNumerico);
-    if (!isNaN(assenze)) {
-      if (!assenzePerStudente.has(row.Hash)) {
-        assenzePerStudente.set(row.Hash, { classe: row.Classe_Sigla, totaleAssenze: 0, materie: 0 });
-      }
-      const info = assenzePerStudente.get(row.Hash)!;
-      info.totaleAssenze += assenze;
-      info.materie++;
-    }
-  }
-  
-  const studentiConMolteAssenze: StudenteConProblemi[] = Array.from(assenzePerStudente.entries())
-    .filter(([_, info]) => info.totaleAssenze >= SOGLIA_ASSENZE)
-    .map(([hash, info]) => ({
-      hash,
-      classe: info.classe,
-      problema: 'Assenze',
-      dettaglio: `${info.totaleAssenze} ore totali`
-    }))
-    .sort((a, b) => parseInt(b.dettaglio) - parseInt(a.dettaglio));
   
   return {
     totaleStudenti: uniqueStudents.size,
@@ -278,10 +210,6 @@ export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): Primo
     mediaVotiOrali,
     mediaVotiScritti,
     percentualeInsuffTotale,
-    studentiConNC,
-    studentiConMolteAssenze,
-    totaleVotiNC,
-    sogliaAssenze: SOGLIA_ASSENZE,
   };
 }
 

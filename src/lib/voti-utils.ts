@@ -218,8 +218,8 @@ export function cleanMateria(materia: string): string {
 
 export type ProcessType = 'voti-finali' | 'primo-periodo';
 
-// Output per voti finali - SENZA colonna CF (solo Hash per privacy)
 export interface OutputRow {
+  CF: string;
   Hash: string;
   Materia: string;
   Classe_Sigla: string;

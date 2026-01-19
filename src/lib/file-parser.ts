@@ -83,11 +83,11 @@ async function parseExcelOrODS(file: File): Promise<Record<string, string>[]> {
 export function exportToExcel(data: object[], filename: string): void {
   // Create a new workbook
   const workbook = XLSX.utils.book_new();
-  
+
   // Prepare data with Hash column as explicit text to avoid formula interpretation
   const safeData = data.map(row => {
-    const newRow: Record<string, string | number> = {};
-    for (const [key, value] of Object.entries(row)) {
+    const newRow: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(row as Record<string, unknown>)) {
       if (key === 'Hash') {
         // Remove the leading apostrophe if present (it was for CSV)
         const hashValue = String(value).replace(/^'/, '');
