@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  normalizeSpacesUpper,
   numericOrEmpty,
   isValidCF,
   base64sha1,
@@ -11,13 +10,11 @@ import {
   type PrimoPeriodoProcessingResult,
 } from './voti-utils';
 
-// Materie da escludere (non sono materie didattiche)
+// Materie da escludere (non sono materie didattiche) - COMPORTAMENTO RIMOSSO
 const MATERIE_ESCLUSE = [
   'RELIGIONE',
   'ATTIVITA ALTERNATIVA',
   'ATTIVITÀ ALTERNATIVA',
-  'COMPORTAMENTO',
-  'CONDOTTA',
   'EDUCAZIONE CIVICA',
   'ED. CIVICA',
 ];
@@ -235,7 +232,7 @@ export async function processPrimoPeriodoFile(
   reportLines.push(`Classi: ${studentiPerClasse.size}`);
   reportLines.push(`Materie: ${materieUniche.size}`);
   reportLines.push("\n✅ Codici fiscali anonimizzati con hash");
-  reportLines.push("✅ Materie non didattiche rimosse");
+  reportLines.push("✅ Materie non didattiche rimosse (escluso COMPORTAMENTO)");
   
   return { outputData: outputRows, reportLines, errors };
 }

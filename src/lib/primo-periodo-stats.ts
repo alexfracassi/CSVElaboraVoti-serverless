@@ -23,6 +23,20 @@ export interface DistribuzioneInsufficienze {
   colore: string;
 }
 
+// Nuovo: studente con NC
+export interface StudenteConNC {
+  hash: string;
+  classe: string;
+  materieNC: string[];
+}
+
+// Nuovo: studente con assenze elevate
+export interface StudenteConAssenzeElevate {
+  hash: string;
+  classe: string;
+  oreAssenzaTotali: number;
+}
+
 export interface PrimoPeriodoStats {
   // Statistiche generali
   totaleStudenti: number;
@@ -46,6 +60,21 @@ export interface PrimoPeriodoStats {
   mediaVotiOrali: number;
   mediaVotiScritti: number;
   percentualeInsuffTotale: number;
+  
+  // Nuovo: studenti con NC (Non Classificato)
+  studentiConNC: StudenteConNC[];
+  totaleNC: number;
+  
+  // Nuovo: studenti con assenze elevate (>50 ore)
+  studentiConAssenzeElevate: StudenteConAssenzeElevate[];
+  sogliaAssenzeElevate: number;
+}
+
+// Funzione per verificare se un voto è NC (Non Classificato)
+function isNC(voto: string): boolean {
+  if (!voto) return false;
+  const upper = voto.toUpperCase().trim();
+  return upper === 'NC' || upper === 'N.C.' || upper === 'N/C' || upper === 'NON CLASSIFICATO';
 }
 
 function getVotoMigliore(row: PrimoPeriodoOutputRow): number | null {
@@ -71,6 +100,11 @@ function getVotoMigliore(row: PrimoPeriodoOutputRow): number | null {
   return voti.reduce((a, b) => a + b, 0) / voti.length;
 }
 
+// Verifica se una riga ha almeno un voto NC
+function hasNC(row: PrimoPeriodoOutputRow): boolean {
+  return isNC(row.VotoScritto) || isNC(row.VotoOrale) || isNC(row.VotoPratico);
+}
+
 function getDistribuzioneColori(): string[] {
   return [
     '#22c55e', // 0 insuff - verde
@@ -83,6 +117,7 @@ function getDistribuzioneColori(): string[] {
 
 export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): PrimoPeriodoStats {
   const colori = getDistribuzioneColori();
+  const SOGLIA_ASSENZE = 50; // ore
   
   // Calcola statistiche base
   const uniqueStudents = new Set(data.map(r => r.Hash));
@@ -198,6 +233,46 @@ export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): Primo
     ? (insuffTotali / tuttiVoti.length) * 100 
     : 0;
   
+  // NUOVO: Calcola studenti con NC
+  const studentiNCMap = new Map<string, { classe: string; materie: Set<string> }>();
+  for (const row of data) {
+    if (hasNC(row)) {
+      if (!studentiNCMap.has(row.Hash)) {
+        studentiNCMap.set(row.Hash, { classe: row.Classe_Sigla, materie: new Set() });
+      }
+      studentiNCMap.get(row.Hash)!.materie.add(row.Materia);
+    }
+  }
+  
+  const studentiConNC: StudenteConNC[] = Array.from(studentiNCMap.entries())
+    .map(([hash, info]) => ({
+      hash,
+      classe: info.classe,
+      materieNC: Array.from(info.materie).sort()
+    }))
+    .sort((a, b) => a.classe.localeCompare(b.classe) || b.materieNC.length - a.materieNC.length);
+  
+  // NUOVO: Calcola studenti con assenze elevate
+  const assenzePerStudente = new Map<string, { classe: string; totale: number }>();
+  for (const row of data) {
+    const ore = parseFloat(row.OreAssenzaNumerico);
+    if (!isNaN(ore) && ore > 0) {
+      if (!assenzePerStudente.has(row.Hash)) {
+        assenzePerStudente.set(row.Hash, { classe: row.Classe_Sigla, totale: 0 });
+      }
+      assenzePerStudente.get(row.Hash)!.totale += ore;
+    }
+  }
+  
+  const studentiConAssenzeElevate: StudenteConAssenzeElevate[] = Array.from(assenzePerStudente.entries())
+    .filter(([_, info]) => info.totale > SOGLIA_ASSENZE)
+    .map(([hash, info]) => ({
+      hash,
+      classe: info.classe,
+      oreAssenzaTotali: Math.round(info.totale)
+    }))
+    .sort((a, b) => b.oreAssenzaTotali - a.oreAssenzaTotali);
+  
   return {
     totaleStudenti: uniqueStudents.size,
     totaleClassi: uniqueClasses.size,
@@ -210,6 +285,11 @@ export function calculatePrimoPeriodoStats(data: PrimoPeriodoOutputRow[]): Primo
     mediaVotiOrali,
     mediaVotiScritti,
     percentualeInsuffTotale,
+    // Nuovi campi
+    studentiConNC,
+    totaleNC: studentiConNC.length,
+    studentiConAssenzeElevate,
+    sogliaAssenzeElevate: SOGLIA_ASSENZE,
   };
 }
 

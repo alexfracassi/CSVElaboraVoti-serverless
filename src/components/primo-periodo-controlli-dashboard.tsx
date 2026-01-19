@@ -19,7 +19,9 @@ import {
   PieChart as PieChartIcon,
   Target,
   Award,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PrimoPeriodoStats } from '@/lib/primo-periodo-stats';
@@ -269,6 +271,26 @@ export function PrimoPeriodoControlliDashboard({ stats }: PrimoPeriodoControlliD
       valore: stats.mediaVotiOrali.toFixed(2)
     });
     
+    // Nuovo: controllo NC
+    result.push({
+      titolo: 'Studenti con NC',
+      descrizione: stats.totaleNC > 0 ? 'Studenti con voti Non Classificato' : 'Nessuno studente con NC',
+      stato: stats.totaleNC > 0 ? 'warning' : 'ok',
+      valore: stats.totaleNC,
+      dettaglio: stats.totaleNC > 0 ? `${((stats.totaleNC / stats.totaleStudenti) * 100).toFixed(1)}% del totale` : undefined
+    });
+    
+    // Nuovo: controllo assenze
+    result.push({
+      titolo: 'Assenze Elevate',
+      descrizione: `Studenti con più di ${stats.sogliaAssenzeElevate} ore di assenza`,
+      stato: stats.studentiConAssenzeElevate.length > 0 ? 'warning' : 'ok',
+      valore: stats.studentiConAssenzeElevate.length,
+      dettaglio: stats.studentiConAssenzeElevate.length > 0 
+        ? `${((stats.studentiConAssenzeElevate.length / stats.totaleStudenti) * 100).toFixed(1)}% del totale` 
+        : undefined
+    });
+    
     return result;
   }, [stats]);
 
@@ -313,7 +335,8 @@ export function PrimoPeriodoControlliDashboard({ stats }: PrimoPeriodoControlliD
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Key Metrics - aggiunto NC e Assenze */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           title="Studenti Totali"
           value={stats.totaleStudenti}
@@ -336,15 +359,103 @@ export function PrimoPeriodoControlliDashboard({ stats }: PrimoPeriodoControlliD
           trendLabel="Positivo"
         />
         <StatCard
-          title="Situazione Critica"
+          title="4+ Insufficienze"
           value={`${percentualeCon4PiuInsuff.toFixed(1)}%`}
-          subtitle={`${studentiCon4PiuInsuff} studenti con 4+ insuff.`}
+          subtitle={`${studentiCon4PiuInsuff} studenti`}
           icon={AlertCircle}
           variant={percentualeCon4PiuInsuff > 15 ? 'danger' : percentualeCon4PiuInsuff > 10 ? 'warning' : 'default'}
-          trend={percentualeCon4PiuInsuff > 15 ? 'down' : undefined}
-          trendLabel={percentualeCon4PiuInsuff > 15 ? 'Critico' : undefined}
+        />
+        <StatCard
+          title="Studenti con NC"
+          value={stats.totaleNC}
+          subtitle="Non Classificato"
+          icon={XCircle}
+          variant={stats.totaleNC > 0 ? 'danger' : 'success'}
+        />
+        <StatCard
+          title="Assenze Elevate"
+          value={stats.studentiConAssenzeElevate.length}
+          subtitle={`>${stats.sogliaAssenzeElevate} ore`}
+          icon={Clock}
+          variant={stats.studentiConAssenzeElevate.length > 0 ? 'warning' : 'success'}
         />
       </div>
+
+      {/* Sezione Studenti con NC */}
+      {stats.studentiConNC.length > 0 && (
+        <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
+              <XCircle className="h-5 w-5" />
+              Studenti con Voti NC (Non Classificato)
+            </CardTitle>
+            <CardDescription>
+              {stats.totaleNC} studenti hanno almeno una materia con voto NC
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+              {stats.studentiConNC.slice(0, 12).map((studente, index) => (
+                <div 
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-red-950/30"
+                >
+                  <div>
+                    <p className="font-mono text-sm">{studente.hash}</p>
+                    <p className="text-xs text-muted-foreground">Classe {studente.classe}</p>
+                  </div>
+                  <Badge variant="destructive" className="text-xs">
+                    {studente.materieNC.length} NC
+                  </Badge>
+                </div>
+              ))}
+            </div>
+            {stats.studentiConNC.length > 12 && (
+              <p className="text-sm text-muted-foreground mt-4 text-center">
+                ... e altri {stats.studentiConNC.length - 12} studenti
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sezione Studenti con Assenze Elevate */}
+      {stats.studentiConAssenzeElevate.length > 0 && (
+        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <Clock className="h-5 w-5" />
+              Studenti con Assenze Elevate (&gt;{stats.sogliaAssenzeElevate} ore)
+            </CardTitle>
+            <CardDescription>
+              {stats.studentiConAssenzeElevate.length} studenti hanno superato la soglia di {stats.sogliaAssenzeElevate} ore di assenza
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+              {stats.studentiConAssenzeElevate.slice(0, 12).map((studente, index) => (
+                <div 
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-amber-950/30"
+                >
+                  <div>
+                    <p className="font-mono text-sm">{studente.hash}</p>
+                    <p className="text-xs text-muted-foreground">Classe {studente.classe}</p>
+                  </div>
+                  <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                    {studente.oreAssenzaTotali} ore
+                  </Badge>
+                </div>
+              ))}
+            </div>
+            {stats.studentiConAssenzeElevate.length > 12 && (
+              <p className="text-sm text-muted-foreground mt-4 text-center">
+                ... e altri {stats.studentiConAssenzeElevate.length - 12} studenti
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

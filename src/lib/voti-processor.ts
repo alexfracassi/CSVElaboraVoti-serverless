@@ -383,7 +383,8 @@ export async function processVotiFiles(
   reportLines.push("\nB) CONTROLLI DI COERENZA");
   reportLines.push("-".repeat(40));
   
-  const ESCLUDI_MATERIE = ['ESITO', 'ASSENZE', 'COMPORTAMENTO', 'CREDITO'];
+  // COMPORTAMENTO RIMOSSO dalla lista delle materie escluse nei controlli
+  const ESCLUDI_MATERIE = ['ESITO', 'ASSENZE', 'CREDITO'];
   
   const isMateriaValida = (materia: string): boolean => {
     const materiaUpper = materia.toUpperCase();
