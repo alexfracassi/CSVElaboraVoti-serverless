@@ -12,6 +12,12 @@
   <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
+  <!-- SheetJS for Excel/ODS parsing -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <!-- PapaParse for CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
   <style>
     :root {
       --primary: #2563eb;
@@ -180,35 +186,6 @@
       color: var(--gray-500);
     }
 
-    /* Form Elements */
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--gray-700);
-      margin-bottom: 0.5rem;
-    }
-
-    .form-select {
-      width: 100%;
-      padding: 0.625rem 0.875rem;
-      border: 1px solid var(--gray-300);
-      border-radius: 0.375rem;
-      font-size: 0.875rem;
-      background: white;
-      cursor: pointer;
-    }
-
-    .form-select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
     /* Grid */
     .grid-2 {
       display: grid;
@@ -220,6 +197,93 @@
       .grid-2 {
         grid-template-columns: 1fr;
       }
+    }
+
+    /* File Upload Zone */
+    .upload-zone {
+      border: 2px dashed var(--gray-300);
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--gray-50);
+    }
+
+    .upload-zone:hover {
+      border-color: var(--primary);
+      background: var(--blue-50);
+    }
+
+    .upload-zone.dragover {
+      border-color: var(--primary);
+      background: var(--blue-100);
+    }
+
+    .upload-zone.has-file {
+      border-color: var(--success);
+      background: var(--green-50);
+      border-style: solid;
+    }
+
+    .upload-zone-icon {
+      font-size: 3rem;
+      color: var(--gray-400);
+      margin-bottom: 0.5rem;
+    }
+
+    .upload-zone.has-file .upload-zone-icon {
+      color: var(--success);
+    }
+
+    .upload-zone-text {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+
+    .upload-zone-text strong {
+      color: var(--primary);
+    }
+
+    .upload-zone-hint {
+      font-size: 0.75rem;
+      color: var(--gray-400);
+      margin-top: 0.5rem;
+    }
+
+    .upload-zone input[type="file"] {
+      display: none;
+    }
+
+    .file-info {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: white;
+      border-radius: 0.375rem;
+      border: 1px solid var(--gray-200);
+    }
+
+    .file-info-name {
+      font-weight: 500;
+      color: var(--gray-800);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .file-info-details {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      margin-top: 0.25rem;
+    }
+
+    .file-remove {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      padding: 0.25rem;
+      margin-left: auto;
     }
 
     /* Buttons */
@@ -316,6 +380,10 @@
       padding: 0.5rem;
       text-align: left;
       border: 1px solid var(--gray-200);
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .preview-table th {
@@ -504,7 +572,7 @@
     <div id="uploadView">
       <div class="header">
         <h1>Elaborazione Voti</h1>
-        <p>Seleziona il tipo di elaborazione e i fogli da processare</p>
+        <p>Carica i file CSV, Excel o ODS per elaborare i voti</p>
       </div>
 
       <!-- Process Type Selector -->
@@ -526,35 +594,34 @@
         </div>
         <div class="card-content">
           <ol id="infoSteps">
-            <li>Seleziona il foglio degli <strong>scrutini differiti</strong> (studenti con sospensione a giugno)</li>
-            <li>Seleziona il foglio <strong>completo</strong> con tutti gli studenti e le materie</li>
+            <li>Carica il file degli <strong>scrutini differiti</strong> (studenti con sospensione a giugno)</li>
+            <li>Carica il file <strong>completo</strong> con tutti gli studenti e le materie</li>
             <li>Clicca su <strong>Elabora</strong> per unire i dati</li>
             <li>Visualizza i risultati e scarica i file elaborati</li>
           </ol>
         </div>
       </div>
 
-      <!-- File Selection - Voti Finali -->
+      <!-- File Upload - Voti Finali -->
       <div id="votiFinaliFields">
         <div class="grid-2">
           <div class="card">
             <div class="card-header">
               <h2><span class="material-icons">description</span> File Scrutini Differiti</h2>
-              <p>Foglio con i voti degli studenti con sospensione a giugno</p>
+              <p>File con i voti degli studenti con sospensione a giugno</p>
             </div>
             <div class="card-content">
-              <div class="form-group">
-                <label class="form-label">Seleziona Spreadsheet</label>
-                <select id="diffSpreadsheet" class="form-select" onchange="loadSheetNames('diff')">
-                  <option value="">-- Seleziona un file --</option>
-                </select>
+              <div class="upload-zone" id="diffUploadZone" onclick="document.getElementById('diffFileInput').click()">
+                <input type="file" id="diffFileInput" accept=".csv,.xlsx,.xls,.ods" onchange="handleFileSelect(event, 'diff')">
+                <div class="upload-zone-icon">
+                  <span class="material-icons" style="font-size: inherit;">upload_file</span>
+                </div>
+                <div class="upload-zone-text">
+                  <strong>Clicca per selezionare</strong> o trascina il file qui
+                </div>
+                <div class="upload-zone-hint">CSV, Excel (.xlsx, .xls) o ODS</div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Seleziona Foglio</label>
-                <select id="diffSheet" class="form-select" onchange="previewSheet('diff')">
-                  <option value="">-- Prima seleziona uno spreadsheet --</option>
-                </select>
-              </div>
+              <div id="diffFileInfo" class="file-info hidden"></div>
               <div id="diffPreview" class="preview-container hidden"></div>
             </div>
           </div>
@@ -562,49 +629,45 @@
           <div class="card">
             <div class="card-header">
               <h2><span class="material-icons">description</span> File Completo Studenti</h2>
-              <p>Foglio con tutti gli studenti e tutte le materie</p>
+              <p>File con tutti gli studenti e tutte le materie</p>
             </div>
             <div class="card-content">
-              <div class="form-group">
-                <label class="form-label">Seleziona Spreadsheet</label>
-                <select id="allSpreadsheet" class="form-select" onchange="loadSheetNames('all')">
-                  <option value="">-- Seleziona un file --</option>
-                </select>
+              <div class="upload-zone" id="allUploadZone" onclick="document.getElementById('allFileInput').click()">
+                <input type="file" id="allFileInput" accept=".csv,.xlsx,.xls,.ods" onchange="handleFileSelect(event, 'all')">
+                <div class="upload-zone-icon">
+                  <span class="material-icons" style="font-size: inherit;">upload_file</span>
+                </div>
+                <div class="upload-zone-text">
+                  <strong>Clicca per selezionare</strong> o trascina il file qui
+                </div>
+                <div class="upload-zone-hint">CSV, Excel (.xlsx, .xls) o ODS</div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Seleziona Foglio</label>
-                <select id="allSheet" class="form-select" onchange="previewSheet('all')">
-                  <option value="">-- Prima seleziona uno spreadsheet --</option>
-                </select>
-              </div>
+              <div id="allFileInfo" class="file-info hidden"></div>
               <div id="allPreview" class="preview-container hidden"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- File Selection - Primo Periodo -->
+      <!-- File Upload - Primo Periodo -->
       <div id="primoPeriodoFields" class="hidden">
         <div class="card">
           <div class="card-header">
             <h2><span class="material-icons">description</span> File Voti Primo Periodo</h2>
-            <p>Foglio con i voti del primo quadrimestre</p>
+            <p>File con i voti del primo quadrimestre</p>
           </div>
           <div class="card-content">
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Seleziona Spreadsheet</label>
-                <select id="ppSpreadsheet" class="form-select" onchange="loadSheetNames('pp')">
-                  <option value="">-- Seleziona un file --</option>
-                </select>
+            <div class="upload-zone" id="ppUploadZone" onclick="document.getElementById('ppFileInput').click()" style="max-width: 500px;">
+              <input type="file" id="ppFileInput" accept=".csv,.xlsx,.xls,.ods" onchange="handleFileSelect(event, 'pp')">
+              <div class="upload-zone-icon">
+                <span class="material-icons" style="font-size: inherit;">upload_file</span>
               </div>
-              <div class="form-group">
-                <label class="form-label">Seleziona Foglio</label>
-                <select id="ppSheet" class="form-select" onchange="previewSheet('pp')">
-                  <option value="">-- Prima seleziona uno spreadsheet --</option>
-                </select>
+              <div class="upload-zone-text">
+                <strong>Clicca per selezionare</strong> o trascina il file qui
               </div>
+              <div class="upload-zone-hint">CSV, Excel (.xlsx, .xls) o ODS</div>
             </div>
+            <div id="ppFileInfo" class="file-info hidden" style="max-width: 500px;"></div>
             <div id="ppPreview" class="preview-container hidden"></div>
           </div>
         </div>
@@ -617,7 +680,7 @@
             <span class="material-icons">play_arrow</span>
             Elabora File
           </button>
-          <span id="processHint" class="progress-text" style="margin-left: 1rem;">Seleziona i file per procedere</span>
+          <span id="processHint" class="progress-text" style="margin-left: 1rem;">Carica i file per procedere</span>
 
           <div id="progressContainer" class="progress-container hidden">
             <div class="progress-bar">
@@ -663,10 +726,10 @@
         </div>
         <div class="card-content">
           <div class="download-buttons">
-            <a id="downloadSheetBtn" class="btn btn-success btn-lg" target="_blank">
-              <span class="material-icons">open_in_new</span>
-              Apri Google Sheets
-            </a>
+            <button id="downloadExcelBtn" class="btn btn-success btn-lg" onclick="downloadExcel()">
+              <span class="material-icons">table_chart</span>
+              Scarica Excel (.xlsx)
+            </button>
             <button id="downloadCsvBtn" class="btn btn-outline btn-lg" onclick="downloadCSV()">
               <span class="material-icons">description</span>
               Scarica CSV
@@ -706,158 +769,216 @@
     // State
     var state = {
       processType: 'voti-finali',
-      spreadsheets: [],
+      files: {
+        diff: null,
+        all: null,
+        pp: null
+      },
+      parsedData: {
+        diff: null,
+        all: null,
+        pp: null
+      },
       resultData: null,
       reportLines: [],
-      csv: ''
+      outputData: []
     };
 
-    // Initialize
+    // Initialize drag and drop
     document.addEventListener('DOMContentLoaded', function() {
-      loadSpreadsheets();
+      setupDragDrop('diffUploadZone', 'diff');
+      setupDragDrop('allUploadZone', 'all');
+      setupDragDrop('ppUploadZone', 'pp');
     });
 
-    // Load available spreadsheets
-    function loadSpreadsheets() {
-      showToast('Caricamento file...', 'info');
+    // Setup drag and drop for upload zones
+    function setupDragDrop(zoneId, type) {
+      var zone = document.getElementById(zoneId);
 
-      google.script.run
-        .withSuccessHandler(function(files) {
-          state.spreadsheets = files || [];
-          populateSpreadsheetSelects();
-          showToast('File caricati: ' + state.spreadsheets.length, 'success');
-        })
-        .withFailureHandler(function(error) {
-          showToast('Errore nel caricamento: ' + error, 'error');
-        })
-        .apiGetSpreadsheets();
-    }
+      zone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.add('dragover');
+      });
 
-    // Populate spreadsheet selects
-    function populateSpreadsheetSelects() {
-      var selects = ['diffSpreadsheet', 'allSpreadsheet', 'ppSpreadsheet'];
+      zone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.remove('dragover');
+      });
 
-      selects.forEach(function(id) {
-        var select = document.getElementById(id);
-        select.innerHTML = '<option value="">-- Seleziona un file --</option>';
+      zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.remove('dragover');
 
-        state.spreadsheets.forEach(function(file) {
-          var option = document.createElement('option');
-          option.value = file.id;
-          option.textContent = file.name;
-          select.appendChild(option);
-        });
+        var files = e.dataTransfer.files;
+        if (files.length > 0) {
+          processFile(files[0], type);
+        }
       });
     }
 
-    // Load sheet names for a spreadsheet
-    function loadSheetNames(type) {
-      var spreadsheetId;
-      var sheetSelect;
-
-      switch(type) {
-        case 'diff':
-          spreadsheetId = document.getElementById('diffSpreadsheet').value;
-          sheetSelect = document.getElementById('diffSheet');
-          break;
-        case 'all':
-          spreadsheetId = document.getElementById('allSpreadsheet').value;
-          sheetSelect = document.getElementById('allSheet');
-          break;
-        case 'pp':
-          spreadsheetId = document.getElementById('ppSpreadsheet').value;
-          sheetSelect = document.getElementById('ppSheet');
-          break;
+    // Handle file selection via input
+    function handleFileSelect(event, type) {
+      var file = event.target.files[0];
+      if (file) {
+        processFile(file, type);
       }
-
-      if (!spreadsheetId) {
-        sheetSelect.innerHTML = '<option value="">-- Prima seleziona uno spreadsheet --</option>';
-        updateProcessButton();
-        return;
-      }
-
-      sheetSelect.innerHTML = '<option value="">Caricamento...</option>';
-
-      google.script.run
-        .withSuccessHandler(function(names) {
-          sheetSelect.innerHTML = '';
-          names.forEach(function(name, index) {
-            var option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            if (index === 0) option.selected = true;
-            sheetSelect.appendChild(option);
-          });
-          previewSheet(type);
-          updateProcessButton();
-        })
-        .withFailureHandler(function(error) {
-          sheetSelect.innerHTML = '<option value="">Errore</option>';
-          showToast('Errore: ' + error, 'error');
-        })
-        .apiGetSheetNames(spreadsheetId);
     }
 
-    // Preview sheet data
-    function previewSheet(type) {
-      var spreadsheetId, sheetName, previewDiv;
+    // Process uploaded file
+    function processFile(file, type) {
+      var validExtensions = ['.csv', '.xlsx', '.xls', '.ods'];
+      var fileName = file.name.toLowerCase();
+      var isValid = validExtensions.some(function(ext) {
+        return fileName.endsWith(ext);
+      });
 
-      switch(type) {
-        case 'diff':
-          spreadsheetId = document.getElementById('diffSpreadsheet').value;
-          sheetName = document.getElementById('diffSheet').value;
-          previewDiv = document.getElementById('diffPreview');
-          break;
-        case 'all':
-          spreadsheetId = document.getElementById('allSpreadsheet').value;
-          sheetName = document.getElementById('allSheet').value;
-          previewDiv = document.getElementById('allPreview');
-          break;
-        case 'pp':
-          spreadsheetId = document.getElementById('ppSpreadsheet').value;
-          sheetName = document.getElementById('ppSheet').value;
-          previewDiv = document.getElementById('ppPreview');
-          break;
-      }
-
-      if (!spreadsheetId || !sheetName) {
-        previewDiv.classList.add('hidden');
+      if (!isValid) {
+        showToast('Formato file non supportato. Usa CSV, Excel o ODS.', 'error');
         return;
       }
 
-      previewDiv.innerHTML = '<p style="color: var(--gray-500); font-size: 0.875rem;">Caricamento anteprima...</p>';
-      previewDiv.classList.remove('hidden');
+      state.files[type] = file;
 
-      google.script.run
-        .withSuccessHandler(function(result) {
-          if (!result.success) {
-            previewDiv.innerHTML = '<p style="color: var(--error); font-size: 0.875rem;">Errore: ' + result.error + '</p>';
-            return;
+      // Update UI
+      var zone = document.getElementById(type + 'UploadZone');
+      var fileInfo = document.getElementById(type + 'FileInfo');
+
+      zone.classList.add('has-file');
+
+      var sizeKB = (file.size / 1024).toFixed(1);
+      fileInfo.innerHTML =
+        '<div class="file-info-name">' +
+        '<span class="material-icons small">insert_drive_file</span>' +
+        '<span>' + escapeHtml(file.name) + '</span>' +
+        '<button class="file-remove" onclick="removeFile(\'' + type + '\', event)">' +
+        '<span class="material-icons small">close</span>' +
+        '</button>' +
+        '</div>' +
+        '<div class="file-info-details">' + sizeKB + ' KB</div>';
+      fileInfo.classList.remove('hidden');
+
+      // Parse file
+      parseFile(file, type);
+    }
+
+    // Remove file
+    function removeFile(type, event) {
+      event.stopPropagation();
+
+      state.files[type] = null;
+      state.parsedData[type] = null;
+
+      var zone = document.getElementById(type + 'UploadZone');
+      var fileInfo = document.getElementById(type + 'FileInfo');
+      var preview = document.getElementById(type + 'Preview');
+      var input = document.getElementById(type + 'FileInput');
+
+      zone.classList.remove('has-file');
+      fileInfo.classList.add('hidden');
+      preview.classList.add('hidden');
+      input.value = '';
+
+      updateProcessButton();
+    }
+
+    // Parse file based on type
+    function parseFile(file, type) {
+      var fileName = file.name.toLowerCase();
+
+      if (fileName.endsWith('.csv')) {
+        parseCSV(file, type);
+      } else {
+        parseExcel(file, type);
+      }
+    }
+
+    // Parse CSV file
+    function parseCSV(file, type) {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        encoding: 'UTF-8',
+        complete: function(results) {
+          if (results.errors.length > 0) {
+            console.warn('CSV parse warnings:', results.errors);
           }
+          state.parsedData[type] = results.data;
+          showPreview(type, results.data);
+          updateProcessButton();
+          showToast('File caricato: ' + results.data.length + ' righe', 'success');
+        },
+        error: function(error) {
+          showToast('Errore nella lettura del CSV: ' + error.message, 'error');
+        }
+      });
+    }
 
-          var html = '<table class="preview-table"><thead><tr>';
-          result.headers.forEach(function(h) {
-            html += '<th>' + escapeHtml(h) + '</th>';
-          });
-          html += '</tr></thead><tbody>';
+    // Parse Excel/ODS file
+    function parseExcel(file, type) {
+      var reader = new FileReader();
 
-          result.preview.forEach(function(row) {
-            html += '<tr>';
-            result.headers.forEach(function(h) {
-              html += '<td>' + escapeHtml(row[h] || '') + '</td>';
-            });
-            html += '</tr>';
-          });
+      reader.onload = function(e) {
+        try {
+          var data = new Uint8Array(e.target.result);
+          var workbook = XLSX.read(data, { type: 'array' });
 
-          html += '</tbody></table>';
-          html += '<p class="preview-info">Mostrando prime ' + result.preview.length + ' righe di ' + result.totalRows + ' totali</p>';
+          // Get first sheet
+          var sheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[sheetName];
 
-          previewDiv.innerHTML = html;
-        })
-        .withFailureHandler(function(error) {
-          previewDiv.innerHTML = '<p style="color: var(--error); font-size: 0.875rem;">Errore: ' + error + '</p>';
-        })
-        .apiPreviewSheet(spreadsheetId, sheetName);
+          // Convert to JSON
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+          state.parsedData[type] = jsonData;
+          showPreview(type, jsonData);
+          updateProcessButton();
+          showToast('File caricato: ' + jsonData.length + ' righe', 'success');
+        } catch (error) {
+          showToast('Errore nella lettura del file: ' + error.message, 'error');
+        }
+      };
+
+      reader.onerror = function() {
+        showToast('Errore nella lettura del file', 'error');
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Show preview of data
+    function showPreview(type, data) {
+      var preview = document.getElementById(type + 'Preview');
+
+      if (!data || data.length === 0) {
+        preview.classList.add('hidden');
+        return;
+      }
+
+      var headers = Object.keys(data[0]);
+      var previewRows = data.slice(0, 3);
+
+      var html = '<table class="preview-table"><thead><tr>';
+      headers.forEach(function(h) {
+        html += '<th>' + escapeHtml(h) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      previewRows.forEach(function(row) {
+        html += '<tr>';
+        headers.forEach(function(h) {
+          html += '<td>' + escapeHtml(String(row[h] || '')) + '</td>';
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      html += '<p class="preview-info">Anteprima: prime ' + previewRows.length + ' righe di ' + data.length + ' totali | ' + headers.length + ' colonne</p>';
+
+      preview.innerHTML = html;
+      preview.classList.remove('hidden');
     }
 
     // Select process type
@@ -879,8 +1000,8 @@
       if (type === 'voti-finali') {
         infoTitle.textContent = 'Elaborazione Voti Finali';
         infoSteps.innerHTML =
-          '<li>Seleziona il foglio degli <strong>scrutini differiti</strong> (studenti con sospensione a giugno)</li>' +
-          '<li>Seleziona il foglio <strong>completo</strong> con tutti gli studenti e le materie</li>' +
+          '<li>Carica il file degli <strong>scrutini differiti</strong> (studenti con sospensione a giugno)</li>' +
+          '<li>Carica il file <strong>completo</strong> con tutti gli studenti e le materie</li>' +
           '<li>Clicca su <strong>Elabora</strong> per unire i dati</li>' +
           '<li>Visualizza i risultati e scarica i file elaborati</li>';
 
@@ -889,7 +1010,7 @@
       } else {
         infoTitle.textContent = 'Elaborazione Primo Periodo';
         infoSteps.innerHTML =
-          '<li>Seleziona il foglio dei <strong>voti del primo periodo</strong></li>' +
+          '<li>Carica il file dei <strong>voti del primo periodo</strong></li>' +
           '<li>I codici fiscali verranno <strong>anonimizzati</strong> con hash</li>' +
           '<li>Le materie non didattiche verranno <strong>rimosse</strong></li>' +
           '<li>Scarica il file elaborato pronto per l\'analisi</li>';
@@ -908,19 +1029,11 @@
       var canProcess = false;
 
       if (state.processType === 'voti-finali') {
-        var diffId = document.getElementById('diffSpreadsheet').value;
-        var diffSheet = document.getElementById('diffSheet').value;
-        var allId = document.getElementById('allSpreadsheet').value;
-        var allSheet = document.getElementById('allSheet').value;
-
-        canProcess = diffId && diffSheet && allId && allSheet;
-        hint.textContent = canProcess ? '' : 'Seleziona entrambi i file per procedere';
+        canProcess = state.parsedData.diff && state.parsedData.all;
+        hint.textContent = canProcess ? '' : 'Carica entrambi i file per procedere';
       } else {
-        var ppId = document.getElementById('ppSpreadsheet').value;
-        var ppSheet = document.getElementById('ppSheet').value;
-
-        canProcess = ppId && ppSheet;
-        hint.textContent = canProcess ? '' : 'Seleziona il file per procedere';
+        canProcess = state.parsedData.pp !== null;
+        hint.textContent = canProcess ? '' : 'Carica il file per procedere';
       }
 
       btn.disabled = !canProcess;
@@ -940,7 +1053,7 @@
       errorCard.classList.add('hidden');
 
       progressFill.style.width = '10%';
-      progressText.textContent = 'Avvio elaborazione...';
+      progressText.textContent = 'Invio dati al server...';
 
       var callback = {
         success: function(result) {
@@ -956,10 +1069,10 @@
 
           state.resultData = result;
           state.reportLines = result.reportLines;
-          state.csv = result.csv;
+          state.outputData = result.outputData;
 
           progressText.textContent = 'Completato!';
-          showToast('Elaborazione completata: ' + result.rowCount + ' righe generate', 'success');
+          showToast('Elaborazione completata: ' + result.outputData.length + ' righe generate', 'success');
 
           setTimeout(function() {
             showResults();
@@ -974,30 +1087,19 @@
         }
       };
 
+      progressFill.style.width = '30%';
+      progressText.textContent = 'Elaborazione in corso...';
+
       if (state.processType === 'voti-finali') {
-        var diffId = document.getElementById('diffSpreadsheet').value;
-        var diffSheet = document.getElementById('diffSheet').value;
-        var allId = document.getElementById('allSpreadsheet').value;
-        var allSheet = document.getElementById('allSheet').value;
-
-        progressFill.style.width = '30%';
-        progressText.textContent = 'Lettura file...';
-
         google.script.run
           .withSuccessHandler(callback.success)
           .withFailureHandler(callback.failure)
-          .apiProcessVotiFinali(diffId, diffSheet, allId, allSheet);
+          .processVotiFinaliFromData(state.parsedData.diff, state.parsedData.all);
       } else {
-        var ppId = document.getElementById('ppSpreadsheet').value;
-        var ppSheet = document.getElementById('ppSheet').value;
-
-        progressFill.style.width = '30%';
-        progressText.textContent = 'Lettura file...';
-
         google.script.run
           .withSuccessHandler(callback.success)
           .withFailureHandler(callback.failure)
-          .apiProcessPrimoPeriodo(ppId, ppSheet);
+          .processPrimoPeriodoFromData(state.parsedData.pp);
       }
     }
 
@@ -1024,10 +1126,7 @@
       // Set date/time
       document.getElementById('resultDateTime').textContent = new Date().toLocaleString('it-IT');
 
-      // Set download link
-      document.getElementById('downloadSheetBtn').href = state.resultData.outputUrl;
-
-      // Parse and show stats
+      // Show stats
       showStats();
 
       // Show report
@@ -1083,9 +1182,27 @@
       return stats;
     }
 
+    // Download Excel
+    function downloadExcel() {
+      if (!state.outputData || state.outputData.length === 0) return;
+
+      var ws = XLSX.utils.json_to_sheet(state.outputData);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Dati');
+
+      var timestamp = new Date().toISOString().slice(2, 16).replace(/[-:T]/g, '');
+      var filename = (state.processType === 'voti-finali' ? 'Voti_Complessivo_' : 'PrimoPeriodo_') + timestamp + '.xlsx';
+
+      XLSX.writeFile(wb, filename);
+      showToast('File Excel scaricato', 'success');
+    }
+
     // Download CSV
     function downloadCSV() {
-      var blob = new Blob([state.csv], { type: 'text/csv;charset=utf-8;' });
+      if (!state.outputData || state.outputData.length === 0) return;
+
+      var csv = Papa.unparse(state.outputData);
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       var url = URL.createObjectURL(blob);
       var link = document.createElement('a');
       var timestamp = new Date().toISOString().slice(2, 16).replace(/[-:T]/g, '');
@@ -1115,17 +1232,21 @@
       document.getElementById('uploadView').classList.remove('hidden');
       document.getElementById('resultsView').classList.add('hidden');
 
-      // Reset form
-      document.getElementById('diffSpreadsheet').value = '';
-      document.getElementById('diffSheet').innerHTML = '<option value="">-- Prima seleziona uno spreadsheet --</option>';
-      document.getElementById('allSpreadsheet').value = '';
-      document.getElementById('allSheet').innerHTML = '<option value="">-- Prima seleziona uno spreadsheet --</option>';
-      document.getElementById('ppSpreadsheet').value = '';
-      document.getElementById('ppSheet').innerHTML = '<option value="">-- Prima seleziona uno spreadsheet --</option>';
+      // Reset files
+      ['diff', 'all', 'pp'].forEach(function(type) {
+        state.files[type] = null;
+        state.parsedData[type] = null;
 
-      document.getElementById('diffPreview').classList.add('hidden');
-      document.getElementById('allPreview').classList.add('hidden');
-      document.getElementById('ppPreview').classList.add('hidden');
+        var zone = document.getElementById(type + 'UploadZone');
+        var fileInfo = document.getElementById(type + 'FileInfo');
+        var preview = document.getElementById(type + 'Preview');
+        var input = document.getElementById(type + 'FileInput');
+
+        if (zone) zone.classList.remove('has-file');
+        if (fileInfo) fileInfo.classList.add('hidden');
+        if (preview) preview.classList.add('hidden');
+        if (input) input.value = '';
+      });
 
       document.getElementById('progressContainer').classList.add('hidden');
       document.getElementById('errorCard').classList.add('hidden');
@@ -1136,7 +1257,7 @@
 
       state.resultData = null;
       state.reportLines = [];
-      state.csv = '';
+      state.outputData = [];
     }
 
     // Show toast notification

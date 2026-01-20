@@ -1118,6 +1118,52 @@ function apiProcessPrimoPeriodo(spreadsheetId, sheetName) {
 }
 
 /**
+ * API: Elabora Voti Finali da dati già parsati (file upload dal frontend)
+ */
+function processVotiFinaliFromData(diffData, allData) {
+  try {
+    var result = processVotiFinali(diffData, allData);
+
+    if (result.errors.length > 0) {
+      return { success: false, errors: result.errors };
+    }
+
+    return {
+      success: true,
+      outputData: result.outputData,
+      reportLines: result.reportLines,
+      rowCount: result.outputData.length
+    };
+  } catch (e) {
+    Logger.log('Errore processVotiFinaliFromData: ' + e.toString());
+    return { success: false, errors: [e.toString()] };
+  }
+}
+
+/**
+ * API: Elabora Primo Periodo da dati già parsati (file upload dal frontend)
+ */
+function processPrimoPeriodoFromData(data) {
+  try {
+    var result = processPrimoPeriodo(data);
+
+    if (result.errors.length > 0) {
+      return { success: false, errors: result.errors };
+    }
+
+    return {
+      success: true,
+      outputData: result.outputData,
+      reportLines: result.reportLines,
+      rowCount: result.outputData.length
+    };
+  } catch (e) {
+    Logger.log('Errore processPrimoPeriodoFromData: ' + e.toString());
+    return { success: false, errors: [e.toString()] };
+  }
+}
+
+/**
  * API: Ottieni fogli disponibili
  */
 function apiGetSpreadsheets() {
